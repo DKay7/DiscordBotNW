@@ -1,8 +1,9 @@
 from glob import glob
 from os.path import splitext, basename
 from discord.ext.commands import Bot as BaseBot
+from discord.ext.commands import MissingRequiredArgument
 from config.config import TOKEN, PREFIX, OWNER_IDS, COGS_DIR
-from discord.ext.commands import Context, CommandNotFound, CommandOnCooldown, MissingPermissions
+from discord.ext.commands import Context, CommandNotFound, CommandOnCooldown, MissingPermissions, BadArgument
 
 
 class Bot(BaseBot):
@@ -38,7 +39,10 @@ class Bot(BaseBot):
             await ctx.send(f'This command is on cooldown. Try again in {exc.retry_after:,.2f} secs.')
 
         elif isinstance(exc, MissingPermissions):
-            await ctx.send(f'You have\'n permission to run this command')
+            await ctx.send(f'You haven\'t permission to run this command')
+
+        elif isinstance(exc, MissingRequiredArgument) or isinstance(exc, BadArgument):
+            await ctx.send("One or more requirement arguments are missing")
 
         elif hasattr(exc, "original"):
             raise exc.original
