@@ -8,5 +8,7 @@ def get_temp_ban_embed(duration, link):
                                  f"По истечении этого времени, "
                                  f"вы сможете снова присоединиться к серверу по [сслыке]({link})")
 
-    invite_embed.add_field(name="Время бана", value=f"`{duration}` сек.")
-    invite_embed.add_field(name="Ссылка для возвращения", value=f"[Клик!]({link})")
+    invite_embed.add_field(name="Время бана", value=f"`{duration}` сек.", inline=False)
+    invite_embed.add_field(name="Ссылка для возвращения", value=f"[Клик!]({link})", inline=False)
+
+    return invite_embed

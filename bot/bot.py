@@ -2,7 +2,7 @@ from glob import glob
 from os.path import splitext, basename
 from discord.ext.commands import Bot as BaseBot
 from config.config import TOKEN, PREFIX, OWNER_IDS, COGS_DIR
-from discord.ext.commands import Context, CommandNotFound, CommandOnCooldown
+from discord.ext.commands import Context, CommandNotFound, CommandOnCooldown, MissingPermissions
 
 
 class Bot(BaseBot):
@@ -36,6 +36,9 @@ class Bot(BaseBot):
 
         elif isinstance(exc, CommandOnCooldown):
             await ctx.send(f'This command is on cooldown. Try again in {exc.retry_after:,.2f} secs.')
+
+        elif isinstance(exc, MissingPermissions):
+            await ctx.send(f'You have\'n permission to run this command')
 
         elif hasattr(exc, "original"):
             raise exc.original
