@@ -1,6 +1,6 @@
 from discord.ext.commands import Cog, Context, command, bot_has_permissions, has_permissions, Greedy
 from discord.ext.commands import Converter, BadArgument, MissingPermissions
-from bot.embeds.mod_embeds import send_temp_ban_embed, send_ban_embed,  send_kick_embed
+from bot.embeds.mod_embeds import send_temp_ban_embeds, send_ban_embeds,  send_kick_embeds
 from bot.embeds.mod_embeds import send_mute_embeds, send_unmute_embeds
 from discord import Member, Object, NotFound
 from discord.utils import find
@@ -76,7 +76,7 @@ class Mod(Cog):
                     and not target.guild_permissions.administrator:
                 link = await ctx.channel.create_invite(max_uses=1, unique=True)
 
-                await send_temp_ban_embed(target, time.__str__(), link, reason)
+                await send_temp_ban_embeds(target, time.__str__(), link, reason)
                 await target.ban(reason=reason)
 
                 # TODO remove next line
@@ -107,7 +107,7 @@ class Mod(Cog):
             if ctx.guild.me.top_role.position > target.top_role.position \
                     and not target.guild_permissions.administrator:
 
-                await send_ban_embed(target, reason)
+                await send_ban_embeds(target, reason)
                 await target.ban(reason=reason)
 
                 # TODO remove next line
@@ -145,7 +145,7 @@ class Mod(Cog):
 
                 link = await ctx.channel.create_invite(max_uses=1, unique=True)
 
-                await send_kick_embed(target, link, reason)
+                await send_kick_embeds(target, link, reason)
                 await target.kick(reason=reason)
 
                 # TODO remove next line
@@ -168,7 +168,7 @@ class Mod(Cog):
     @bot_has_permissions(manage_roles=True)
     @has_permissions(manage_roles=True)
     @command(name="mute")
-    async def mute_user(self, ctx: Context, targets: Greedy[Member], time: ToSeconds(), mute_type: str = "all",
+    async def mute_user(self, ctx: Context, targets: Greedy[Member], time: ToSeconds(), mute_type: str = "all", *,
                         reason: Optional[str] = "No reason provided"):
 
         if not targets or mute_type not in ["all", "text", "voice"]:
@@ -194,7 +194,7 @@ class Mod(Cog):
                 # TODO remove next line
                 await ctx.send(f"Muted {target.mention}", delete_after=10)
 
-                await send_mute_embeds(target, time.__str__, reason)
+                await send_mute_embeds(target, time.__str__(), reason)
 
             else:
                 raise MissingPermissions
@@ -205,8 +205,7 @@ class Mod(Cog):
     @bot_has_permissions(manage_roles=True)
     @has_permissions(manage_roles=True)
     @command(name="unmute")
-    async def unmute_user(self, ctx: Context, targets: Greedy[Member], unmute_type: str = "all",
-                          reason: Optional[str] = "No reason provided"):
+    async def unmute_user(self, ctx: Context, targets: Greedy[Member], unmute_type: str = "all"):
 
         if not targets or unmute_type not in ["all", "text", "voice"]:
             raise BadArgument
@@ -228,7 +227,7 @@ class Mod(Cog):
 
                     await channel.set_permissions(target, overwrite=perms)
 
-                await send_unmute_embeds(target, reason)
+                await send_unmute_embeds(target)
 
                 # TODO remove next line
                 await ctx.send(f"Unmuted {target.mention}", delete_after=10)

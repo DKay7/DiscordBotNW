@@ -1,9 +1,9 @@
-from glob import glob
-from os.path import splitext, basename
-from discord.ext.commands import Bot as BaseBot
-from discord.ext.commands import MissingRequiredArgument
-from config.config import TOKEN, PREFIX, OWNER_IDS, COGS_DIR
 from discord.ext.commands import Context, CommandNotFound, CommandOnCooldown, MissingPermissions, BadArgument
+from config.config import TOKEN, PREFIX, OWNER_IDS, COGS_DIR
+from discord.ext.commands import MissingRequiredArgument
+from discord.ext.commands import Bot as BaseBot
+from os.path import splitext, basename
+from glob import glob
 
 
 class Bot(BaseBot):
