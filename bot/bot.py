@@ -17,9 +17,8 @@ class Bot(BaseBot):
 
     async def on_ready(self):
         if not self.ready:
-            for guild in self.guilds:
-                for channel in guild.text_channels:
-                    await channel.send("I'm online now!")
+            # for channel in self.guild.text_channels:
+            #     await channel.send("I'm online now!")
 
             print(f'Logged in as {self.user}')
             self.ready = True
