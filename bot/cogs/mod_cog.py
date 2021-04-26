@@ -27,20 +27,33 @@ class BannedUser(Converter):
 
 class ToSeconds(Converter):
     def __init__(self):
-        self.minutes = None
+        self.minutes = 0
+        self.hours = 0
 
-    async def convert(self, ctx, arg) -> int:
-        if arg.isdigit():
+    async def convert(self, ctx, arg):
+        time_type = arg[-1]
+
+        if time_type not in ['h', 'm'] or not (arg := arg[:-1]).isdigit():
+            raise BadArgument
+
+        if time_type == 'h':
+            self.hours = int(arg)
+        elif time_type == 'm':
             self.minutes = int(arg)
-            return self.get_seconds()
 
-        raise BadArgument
+        return self
 
-    def get_minutes(self):
+    def __str__(self):
+        return f"{self.hours} часов, {self.minutes} минут"
+
+    def get_hours(self) -> int:
+        return self.hours
+
+    def get_minutes(self) -> int:
         return self.minutes
 
-    def get_seconds(self):
-        return self.minutes * 60
+    def get_seconds(self) -> int:
+        return self.minutes * 60 + self.hours * 3600
 
 
 class Mod(Cog):
@@ -52,7 +65,7 @@ class Mod(Cog):
     @command(name="temp_ban")
     @bot_has_permissions(ban_members=True)
     @has_permissions(ban_members=True)
-    async def temp_ban_user(self, ctx: Context, targets: Greedy[Member], time: ToSeconds, *,
+    async def temp_ban_user(self, ctx: Context, targets: Greedy[Member], time: ToSeconds(), *,
                             reason: Optional[str] = "No reason provided"):
 
         if not targets or not time:
@@ -63,11 +76,11 @@ class Mod(Cog):
                     and not target.guild_permissions.administrator:
                 link = await ctx.channel.create_invite(max_uses=1, unique=True)
 
-                await send_temp_ban_embed(target, time, link, reason)
+                await send_temp_ban_embed(target, time.__str__(), link, reason)
                 await target.ban(reason=reason)
 
                 # TODO remove next line
-                await ctx.send(f"Banned {target.mention}")
+                await ctx.send(f"Banned {target.mention}", delete_after=10)
 
             else:
                 raise MissingPermissions
@@ -155,7 +168,7 @@ class Mod(Cog):
     @bot_has_permissions(manage_roles=True)
     @has_permissions(manage_roles=True)
     @command(name="mute")
-    async def mute_user(self, ctx: Context, targets: Greedy[Member], time: ToSeconds, mute_type: str = "all",
+    async def mute_user(self, ctx: Context, targets: Greedy[Member], time: ToSeconds(), mute_type: str = "all",
                         reason: Optional[str] = "No reason provided"):
 
         if not targets or mute_type not in ["all", "text", "voice"]:
@@ -181,7 +194,7 @@ class Mod(Cog):
                 # TODO remove next line
                 await ctx.send(f"Muted {target.mention}", delete_after=10)
 
-                await send_mute_embeds(target, time, reason)
+                await send_mute_embeds(target, time.__str__, reason)
 
             else:
                 raise MissingPermissions
