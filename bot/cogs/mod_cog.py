@@ -25,12 +25,22 @@ class BannedUser(Converter):
                     raise BadArgument
 
 
-class Minutes(Converter):
+class ToSeconds(Converter):
+    def __init__(self):
+        self.minutes = None
+
     async def convert(self, ctx, arg) -> int:
         if arg.isdigit():
-            return 60 * int(arg)
+            self.minutes = int(arg)
+            return self.get_seconds()
 
         raise BadArgument
+
+    def get_minutes(self):
+        return self.minutes
+
+    def get_seconds(self):
+        return self.minutes * 60
 
 
 class Mod(Cog):
@@ -42,7 +52,7 @@ class Mod(Cog):
     @command(name="temp_ban")
     @bot_has_permissions(ban_members=True)
     @has_permissions(ban_members=True)
-    async def temp_ban_user(self, ctx: Context, targets: Greedy[Member], time: Minutes, *,
+    async def temp_ban_user(self, ctx: Context, targets: Greedy[Member], time: ToSeconds, *,
                             reason: Optional[str] = "No reason provided"):
 
         if not targets or not time:
@@ -62,8 +72,7 @@ class Mod(Cog):
             else:
                 raise MissingPermissions
 
-        # noinspection PyTypeChecker
-        await sleep(time)
+        await sleep(time.get_seconds())
 
         for target in targets:
             try:
@@ -146,7 +155,7 @@ class Mod(Cog):
     @bot_has_permissions(manage_roles=True)
     @has_permissions(manage_roles=True)
     @command(name="mute")
-    async def mute_user(self, ctx: Context, targets: Greedy[Member], time: Minutes, mute_type: str = "all",
+    async def mute_user(self, ctx: Context, targets: Greedy[Member], time: ToSeconds, mute_type: str = "all",
                         reason: Optional[str] = "No reason provided"):
 
         if not targets or mute_type not in ["all", "text", "voice"]:
@@ -177,8 +186,7 @@ class Mod(Cog):
             else:
                 raise MissingPermissions
 
-        # noinspection PyTypeChecker
-        await sleep(time)
+        await sleep(time.get_seconds())
         await self.unmute_user(ctx, targets, unmute_type=mute_type)
 
     @bot_has_permissions(manage_roles=True)

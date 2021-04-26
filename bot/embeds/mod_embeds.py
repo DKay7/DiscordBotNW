@@ -12,7 +12,7 @@ def parse_embed_json(json_file):
 
 
 async def send_temp_ban_embed(user, duration, link, reason):
-    with open(BAN_EMBEDS_DIR, "r") as file:
+    with open(TEMP_BAN_EMBEDS_DIR, "r") as file:
         temp_ban_embeds = parse_embed_json(file.read())
 
     for embed in temp_ban_embeds:
@@ -23,7 +23,7 @@ async def send_temp_ban_embed(user, duration, link, reason):
 
 
 async def send_ban_embed(user, reason):
-    with open(TEMP_BAN_EMBEDS_DIR, "r") as file:
+    with open(BAN_EMBEDS_DIR, "r") as file:
         ban_embeds = parse_embed_json(file.read())
 
     for embed in ban_embeds:
