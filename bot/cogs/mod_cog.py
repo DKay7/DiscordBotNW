@@ -1,7 +1,9 @@
 from discord.ext.commands import Cog, Context, command, bot_has_permissions, has_permissions, Greedy
 from discord.ext.commands import Converter, BadArgument, MissingPermissions
 from bot.embeds.mod_embeds import send_temp_ban_embeds, send_ban_embeds,  send_kick_embeds
-from bot.embeds.mod_embeds import send_mute_embeds, send_unmute_embeds
+from bot.embeds.mod_embeds import send_mute_embeds, send_unmute_embeds, send_warn_embeds
+from config.config import NUM_WARNS_TO_TEMP_BAN, TIME_TO_TEMP_BAN
+from db.db_mod_utils import get_warn_entry, update_warn_entry
 from discord import Member, Object, NotFound
 from discord.utils import find
 from typing import Optional
@@ -19,7 +21,8 @@ class BannedUser(Converter):
 
             banned_users = [e.user for e in await ctx.guild.bans()]
             if banned_users:
-                if (user := find(lambda u: str(u) == arg, banned_users)) is not None:
+                print(arg)
+                if (user := find(lambda u: str(u) == arg[1:] or str(u) == arg, banned_users)) is not None:
                     return user
                 else:
                     raise BadArgument
@@ -44,7 +47,7 @@ class ToSeconds(Converter):
         return self
 
     def __str__(self):
-        return f"{self.hours} часов, {self.minutes} минут"
+        return f"{self.hours} час., {self.minutes} мин."
 
     def get_hours(self) -> int:
         return self.hours
@@ -233,6 +236,25 @@ class Mod(Cog):
                 await ctx.send(f"Unmuted {target.mention}", delete_after=10)
             else:
                 raise MissingPermissions
+
+    @bot_has_permissions(manage_roles=True, ban_members=True)
+    @has_permissions(manage_roles=True, ban_members=True)
+    @command(name="warn")
+    async def warn_user(self, ctx: Context, targets: Greedy[Member], *, reason: Optional[str] = "No reason provided"):
+        for target in targets:
+            update_warn_entry(target.id, reason)
+            await send_warn_embeds(target, reason)
+
+            # TODO remove next line
+            await ctx.send(f"Warned {target.mention}", delete_after=10)
+
+            if (num_warns := get_warn_entry(target.id)[1]) % NUM_WARNS_TO_TEMP_BAN == 0:
+                # TODO find more accurate way to temp_ban, maybe write util. function
+                await self.temp_ban_user(ctx, [target],
+                                         time=await ToSeconds().convert(ctx, arg=TIME_TO_TEMP_BAN),
+                                         reason=f"Вы полчили очередные {NUM_WARNS_TO_TEMP_BAN} "
+                                                f"предупреждений и были забанены."
+                                                f"Общее количево предупреждений: {num_warns}")
 
     @command(name="echo")
     async def echo(self, ctx: Context, *, phrase: str):

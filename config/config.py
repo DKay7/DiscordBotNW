@@ -7,7 +7,8 @@ env.read_env()
 PREFIX = '\\'
 TOKEN = env.str('TOKEN')
 OWNER_IDS = env.list('OWNER_IDS')
-
+NUM_WARNS_TO_TEMP_BAN = 3
+TIME_TO_TEMP_BAN = "2m"
 
 # DIRECTORIES
 COGS_DIR = r"bot/cogs/*.py"
@@ -18,6 +19,8 @@ WARN_EMBEDS_DIR = r"data/embeds/warn_embeds.json"
 MUTE_EMBEDS_DIR = r"data/embeds/mute_embeds.json"
 UNMUTE_EMBEDS_DIR = r"data/embeds/unmute_embeds.json"
 
+
 # DATABASE CONFIGS
+WARN_NUM_STORED_REASONS = 10
 DB_PATH = r"data/db/database.db"
 BUILD_PATH = r"data/db/build.sql"
