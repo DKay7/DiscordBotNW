@@ -35,13 +35,16 @@ class Bot(BaseBot):
             pass
 
         elif isinstance(exc, CommandOnCooldown):
-            await ctx.send(f'This command is on cooldown. Try again in {exc.retry_after:,.2f} secs.')
+            await ctx.send(f'Команда на колдауне. Попробуйте снова через {exc.retry_after:,.2f} сек.')
 
         elif isinstance(exc, MissingPermissions):
-            await ctx.send(f'You haven\'t permission to run this command')
+            await ctx.send(f'У вас нет необходимых разрешений для запуска этой команды')
 
-        elif isinstance(exc, MissingRequiredArgument) or isinstance(exc, BadArgument):
-            await ctx.send("One or more requirement arguments are missing")
+        elif isinstance(exc, MissingRequiredArgument):
+            await ctx.send("Не найдены один или несколько обязательных аргументов команды")
+
+        elif isinstance(exc, BadArgument):
+            await ctx.send("Некорректный аргумент команды")
 
         elif hasattr(exc, "original"):
             raise exc.original

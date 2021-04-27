@@ -8,7 +8,7 @@ PREFIX = '\\'
 TOKEN = env.str('TOKEN')
 OWNER_IDS = env.list('OWNER_IDS')
 NUM_WARNS_TO_TEMP_BAN = 3
-TIME_TO_TEMP_BAN = "2m"
+TIME_TO_TEMP_BAN = "24h"
 
 # DIRECTORIES
 COGS_DIR = r"bot/cogs/*.py"

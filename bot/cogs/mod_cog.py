@@ -1,10 +1,12 @@
-from discord.ext.commands import Cog, Context, command, bot_has_permissions, has_permissions, Greedy
-from discord.ext.commands import Converter, BadArgument, MissingPermissions
+from db.db_mod_utils import get_warn_entry, update_warn_entry, unwarn_entry, add_temp_ban_entry, get_temp_ban_entry
+from discord.ext.commands import Cog, Context, command, bot_has_permissions, has_permissions
 from bot.embeds.mod_embeds import send_temp_ban_embeds, send_ban_embeds,  send_kick_embeds
 from bot.embeds.mod_embeds import send_mute_embeds, send_unmute_embeds, send_warn_embeds
+from db.db_mod_utils import delete_temp_ban_entry, get_all_temp_ban_entries
+from discord.ext.commands import Converter, BadArgument, MissingPermissions
 from config.config import NUM_WARNS_TO_TEMP_BAN, TIME_TO_TEMP_BAN
-from db.db_mod_utils import get_warn_entry, update_warn_entry
-from discord import Member, Object, NotFound
+from discord import Member, Object, NotFound, User
+from datetime import datetime, timedelta
 from discord.utils import find
 from typing import Optional
 from asyncio import sleep
@@ -21,17 +23,22 @@ class BannedUser(Converter):
 
             banned_users = [e.user for e in await ctx.guild.bans()]
             if banned_users:
-                print(arg)
                 if (user := find(lambda u: str(u) == arg[1:] or str(u) == arg, banned_users)) is not None:
                     return user
                 else:
+                    await ctx.send(f"Пользователь не найден среди забаненных")
                     raise BadArgument
+            else:
+                await ctx.send(f"Список забаненных пользователей пуст")
+                raise BadArgument
 
 
-class ToSeconds(Converter):
+class TimeConverter(Converter):
     def __init__(self):
         self.minutes = 0
         self.hours = 0
+        self.delta = timedelta()
+        self.end_date = datetime.utcnow()
 
     async def convert(self, ctx, arg):
         time_type = arg[-1]
@@ -44,19 +51,19 @@ class ToSeconds(Converter):
         elif time_type == 'm':
             self.minutes = int(arg)
 
+        self.delta = timedelta(hours=self.hours, minutes=self.minutes)
+        self.end_date = datetime.utcnow() + self.delta
+
         return self
 
     def __str__(self):
         return f"{self.hours} час., {self.minutes} мин."
 
-    def get_hours(self) -> int:
-        return self.hours
+    def get_end_time(self):
+        return self.end_date
 
-    def get_minutes(self) -> int:
-        return self.minutes
-
-    def get_seconds(self) -> int:
-        return self.minutes * 60 + self.hours * 3600
+    def get_seconds(self) -> float:
+        return self.delta.total_seconds()
 
 
 class Mod(Cog):
@@ -65,96 +72,186 @@ class Mod(Cog):
         self.text_mute_role = None
         self.voice_mute_role = None
 
+    async def _ban(self, target: Member, end_time: timedelta, reason: str):
+        add_temp_ban_entry(target.id, end_time, target.guild.id)
+        await target.ban(reason=reason)
+
+    async def _wait_and_unban(self, target: Member = None, entry: list = None):
+        assert target is not None or entry is not None
+        end_date = datetime.utcnow()
+        guild = None
+
+        if target:
+            _, end_date, _ = get_temp_ban_entry(target.id, target.guild.id)
+            guild = target.guild
+        elif entry:
+            target_id, end_date, guild_id = entry
+            guild = self.bot.get_guild(guild_id)
+            target = (await guild.fetch_ban(Object(id=int(target_id)))).user
+
+        if end_date > datetime.utcnow():
+            delta_time = end_date - datetime.utcnow()
+            await sleep(delta_time.total_seconds())
+
+        try:
+            if isinstance(target, User):
+                await guild.unban(user=target, reason="Temp. ban ended")
+            elif isinstance(target, Member):
+                await target.unban(reason="Temp. ban ended")
+        except NotFound:
+            raise
+        finally:
+            delete_temp_ban_entry(target.id, guild.id)
+
+    async def _reload_temp_bans_waiting(self):
+        if all_entries := get_all_temp_ban_entries():
+            for entry in all_entries:
+                await self._wait_and_unban(entry=entry)
+
     @command(name="temp_ban")
     @bot_has_permissions(ban_members=True)
     @has_permissions(ban_members=True)
-    async def temp_ban_user(self, ctx: Context, targets: Greedy[Member], time: ToSeconds(), *,
+    async def temp_ban_user(self, ctx: Context, target: Member, time: TimeConverter(), *,
                             reason: Optional[str] = "No reason provided"):
 
-        if not targets or not time:
+        if not target or not time:
             raise BadArgument
 
-        for target in targets:
-            if ctx.guild.me.top_role.position > target.top_role.position \
-                    and not target.guild_permissions.administrator:
-                link = await ctx.channel.create_invite(max_uses=1, unique=True)
+        if ctx.guild.me.top_role.position > target.top_role.position \
+                and not target.guild_permissions.administrator:
+            link = await ctx.channel.create_invite(max_uses=1, unique=True)
 
-                await send_temp_ban_embeds(target, time.__str__(), link, reason)
-                await target.ban(reason=reason)
+            await send_temp_ban_embeds(target, time.__str__(), link, reason)
+            await self._ban(target, time.get_end_time(), reason)
 
-                # TODO remove next line
-                await ctx.send(f"Banned {target.mention}", delete_after=10)
+            # TODO remove next line
+            await ctx.send(f"Banned {target.mention}", delete_after=10)
 
-            else:
-                raise MissingPermissions
+        else:
+            raise MissingPermissions
+
+        await self._wait_and_unban(target=target)
+        # TODO remove next line
+        await ctx.send(f"Unbanned {target.mention}", delete_after=10)
+
+    @bot_has_permissions(manage_roles=True)
+    @has_permissions(manage_roles=True)
+    @command(name="mute")
+    async def mute_user(self, ctx: Context, target: Member, time: TimeConverter(), mute_type: str = "all", *,
+                        reason: Optional[str] = "No reason provided"):
+
+        if not target or mute_type not in ["all", "text", "voice"]:
+            raise BadArgument
+
+        if ctx.guild.me.top_role.position > target.top_role.position \
+                and not target.guild_permissions.administrator:
+
+            for channel in ctx.guild.channels:
+                perms = channel.overwrites_for(target)
+
+                if mute_type == "text":
+                    perms.send_messages = False
+                elif mute_type == "voice":
+                    perms.speak = False
+                elif mute_type == "all":
+                    perms.send_messages = False
+                    perms.speak = False
+
+                await channel.set_permissions(target, overwrite=perms)
+
+            # TODO remove next line
+            await ctx.send(f"Muted {target.mention}", delete_after=10)
+
+            await send_mute_embeds(target, time.__str__(), reason)
+
+        else:
+            raise MissingPermissions
 
         await sleep(time.get_seconds())
+        await self.unmute_user(ctx, target, unmute_type=mute_type)
 
-        for target in targets:
-            try:
-                await target.unban(reason="Temp. ban ended")
+    @bot_has_permissions(manage_roles=True)
+    @has_permissions(manage_roles=True)
+    @command(name="unmute")
+    async def unmute_user(self, ctx: Context, target: Member, unmute_type: str = "all"):
+
+        if not target or unmute_type not in ["all", "text", "voice"]:
+            raise BadArgument
+
+        if ctx.guild.me.top_role.position > target.top_role.position \
+                and not target.guild_permissions.administrator:
+
+            for channel in ctx.guild.channels:
+                perms = ctx.channel.overwrites_for(target)
+
+                if unmute_type == "text":
+                    perms.send_messages = True
+                elif unmute_type == "voice":
+                    perms.speak = True
+                elif unmute_type == "all":
+                    perms.send_messages = True
+                    perms.speak = True
+
+                await channel.set_permissions(target, overwrite=perms)
+
+                await send_unmute_embeds(target)
+
                 # TODO remove next line
-                await ctx.send(f"Unbanned {target.mention}", delete_after=10)
-            except NotFound:
-                pass
+                await ctx.send(f"Unmuted {target.mention}", delete_after=10)
+            else:
+                raise MissingPermissions
 
     @command(name="ban")
     @bot_has_permissions(ban_members=True)
     @has_permissions(ban_members=True)
-    async def ban_user(self, ctx: Context, targets: Greedy[Member], *,  reason: Optional[str] = "No reason provided"):
+    async def ban_user(self, ctx: Context, target: Member, *,  reason: Optional[str] = "No reason provided"):
 
-        if not targets:
+        if not target:
             raise BadArgument
 
-        for target in targets:
-            if ctx.guild.me.top_role.position > target.top_role.position \
-                    and not target.guild_permissions.administrator:
+        if ctx.guild.me.top_role.position > target.top_role.position \
+                and not target.guild_permissions.administrator:
 
-                await send_ban_embeds(target, reason)
-                await target.ban(reason=reason)
+            await send_ban_embeds(target, reason)
+            await target.ban(reason=reason)
 
-                # TODO remove next line
-                await ctx.send(f"Banned {target.mention}", delete_after=10)
-            else:
-                raise MissingPermissions
+            # TODO remove next line
+            await ctx.send(f"Banned {target.mention}", delete_after=10)
+        else:
+            raise MissingPermissions
 
     @command(name="unban")
     @bot_has_permissions(ban_members=True)
     @has_permissions(ban_members=True)
-    async def unban_user(self, ctx: Context, targets: Greedy[BannedUser], *,
+    async def unban_user(self, ctx: Context, target: BannedUser(), *,
                          reason: Optional[str] = "No reason provided"):
-        if not targets:
+        if not target:
             raise BadArgument
 
-        for target in targets:
-            try:
-                await ctx.guild.unban(target, reason=reason)
-                # TODO remove next line
-                await ctx.send(f"Unbanned {target.mention}", delete_after=10)
-            except NotFound:
-                await ctx.send(f"Пользователь {target.mention} не найден среди забаненных")
+        await ctx.guild.unban(target, reason=reason)
+        # TODO remove next line
+        await ctx.send(f"Unbanned {target.mention}", delete_after=10)
 
     @command(name="kick")
     @bot_has_permissions(kick_members=True)
     @has_permissions(kick_members=True)
-    async def kick_user(self, ctx: Context, targets: Greedy[Member], *, reason: Optional[str] = "No reason provided"):
+    async def kick_user(self, ctx: Context, target: Member, *, reason: Optional[str] = "No reason provided"):
 
-        if not targets:
+        if not target:
             raise BadArgument
 
-        for target in targets:
-            if ctx.guild.me.top_role.position > target.top_role.position \
-                    and not target.guild_permissions.administrator:
+        if ctx.guild.me.top_role.position > target.top_role.position \
+                and not target.guild_permissions.administrator:
 
-                link = await ctx.channel.create_invite(max_uses=1, unique=True)
+            link = await ctx.channel.create_invite(max_uses=1, unique=True)
 
-                await send_kick_embeds(target, link, reason)
-                await target.kick(reason=reason)
+            await send_kick_embeds(target, link, reason)
+            await target.kick(reason=reason)
 
-                # TODO remove next line
-                await ctx.send(f"Kicked {target.mention}", delete_after=10)
-            else:
-                raise MissingPermissions
+            # TODO remove next line
+            await ctx.send(f"Kicked {target.mention}", delete_after=10)
+        else:
+            raise MissingPermissions
 
     @command(name="clear", aliases=['cls'])
     @bot_has_permissions(manage_messages=True)
@@ -168,93 +265,38 @@ class Mod(Cog):
             await ctx.message.delete()
             await ctx.channel.purge(limit=amount)
 
-    @bot_has_permissions(manage_roles=True)
-    @has_permissions(manage_roles=True)
-    @command(name="mute")
-    async def mute_user(self, ctx: Context, targets: Greedy[Member], time: ToSeconds(), mute_type: str = "all", *,
-                        reason: Optional[str] = "No reason provided"):
-
-        if not targets or mute_type not in ["all", "text", "voice"]:
-            raise BadArgument
-
-        for target in targets:
-            if ctx.guild.me.top_role.position > target.top_role.position \
-                    and not target.guild_permissions.administrator:
-
-                for channel in ctx.guild.channels:
-                    perms = channel.overwrites_for(target)
-
-                    if mute_type == "text":
-                        perms.send_messages = False
-                    elif mute_type == "voice":
-                        perms.speak = False
-                    elif mute_type == "all":
-                        perms.send_messages = False
-                        perms.speak = False
-
-                    await channel.set_permissions(target, overwrite=perms)
-
-                # TODO remove next line
-                await ctx.send(f"Muted {target.mention}", delete_after=10)
-
-                await send_mute_embeds(target, time.__str__(), reason)
-
-            else:
-                raise MissingPermissions
-
-        await sleep(time.get_seconds())
-        await self.unmute_user(ctx, targets, unmute_type=mute_type)
-
-    @bot_has_permissions(manage_roles=True)
-    @has_permissions(manage_roles=True)
-    @command(name="unmute")
-    async def unmute_user(self, ctx: Context, targets: Greedy[Member], unmute_type: str = "all"):
-
-        if not targets or unmute_type not in ["all", "text", "voice"]:
-            raise BadArgument
-
-        for target in targets:
-            if ctx.guild.me.top_role.position > target.top_role.position \
-                    and not target.guild_permissions.administrator:
-
-                for channel in ctx.guild.channels:
-                    perms = ctx.channel.overwrites_for(target)
-
-                    if unmute_type == "text":
-                        perms.send_messages = True
-                    elif unmute_type == "voice":
-                        perms.speak = True
-                    elif unmute_type == "all":
-                        perms.send_messages = True
-                        perms.speak = True
-
-                    await channel.set_permissions(target, overwrite=perms)
-
-                await send_unmute_embeds(target)
-
-                # TODO remove next line
-                await ctx.send(f"Unmuted {target.mention}", delete_after=10)
-            else:
-                raise MissingPermissions
-
     @bot_has_permissions(manage_roles=True, ban_members=True)
     @has_permissions(manage_roles=True, ban_members=True)
     @command(name="warn")
-    async def warn_user(self, ctx: Context, targets: Greedy[Member], *, reason: Optional[str] = "No reason provided"):
-        for target in targets:
-            update_warn_entry(target.id, reason)
-            await send_warn_embeds(target, reason)
+    async def warn_user(self, ctx: Context, target: Member, *, reason: Optional[str] = "No reason provided"):
+        if not target:
+            raise BadArgument
 
-            # TODO remove next line
-            await ctx.send(f"Warned {target.mention}", delete_after=10)
+        update_warn_entry(target.id, reason)
+        await send_warn_embeds(target, reason)
 
-            if (num_warns := get_warn_entry(target.id)[1]) % NUM_WARNS_TO_TEMP_BAN == 0:
-                # TODO find more accurate way to temp_ban, maybe write util. function
-                await self.temp_ban_user(ctx, [target],
-                                         time=await ToSeconds().convert(ctx, arg=TIME_TO_TEMP_BAN),
-                                         reason=f"Вы полчили очередные {NUM_WARNS_TO_TEMP_BAN} "
-                                                f"предупреждений и были забанены."
-                                                f"Общее количево предупреждений: {num_warns}")
+        # TODO remove next line
+        await ctx.send(f"Warned {target.mention}", delete_after=10)
+
+        if (num_warns := get_warn_entry(target.id)[1]) % NUM_WARNS_TO_TEMP_BAN == 0:
+            # TODO find more accurate way to temp_ban, maybe write util. function
+            await self.temp_ban_user(ctx, target,
+                                     time=await TimeConverter().convert(ctx, arg=TIME_TO_TEMP_BAN),
+                                     reason=f"Вы полчили очередные {NUM_WARNS_TO_TEMP_BAN} "
+                                            f"предупреждений и были забанены."
+                                            f"Общее количево предупреждений: {num_warns}")
+
+    @bot_has_permissions(manage_roles=True, ban_members=True)
+    @has_permissions(manage_roles=True, ban_members=True)
+    @command(name="unwarn")
+    async def unwarn_user(self, ctx: Context, target: Member):
+        if not target:
+            raise BadArgument
+
+        unwarn_entry(target.id)
+
+        # TODO remove next line
+        await ctx.send(f"UnWarned {target.mention}", delete_after=10)
 
     @command(name="echo")
     async def echo(self, ctx: Context, *, phrase: str):
@@ -263,6 +305,10 @@ class Mod(Cog):
 
         await ctx.message.delete()
         await ctx.send(phrase)
+
+    @Cog.listener()
+    async def on_ready(self):
+        await self._reload_temp_bans_waiting()
 
 
 def setup(bot):
