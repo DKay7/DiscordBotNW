@@ -1,11 +1,12 @@
 from db.db_mod_utils import get_warn_entry, update_warn_entry, unwarn_entry, add_temp_ban_entry, get_temp_ban_entry
+from db.db_mod_utils import get_temp_mute_entry, delete_temp_mute_entry, get_all_temp_mute_entries
+from db.db_mod_utils import delete_temp_ban_entry, get_all_temp_ban_entries, add_temp_mute_entry
 from discord.ext.commands import Cog, Context, command, bot_has_permissions, has_permissions
 from bot.embeds.mod_embeds import send_temp_ban_embeds, send_ban_embeds,  send_kick_embeds
 from bot.embeds.mod_embeds import send_mute_embeds, send_unmute_embeds, send_warn_embeds
-from db.db_mod_utils import delete_temp_ban_entry, get_all_temp_ban_entries
 from discord.ext.commands import Converter, BadArgument, MissingPermissions
 from config.config import NUM_WARNS_TO_TEMP_BAN, TIME_TO_TEMP_BAN
-from discord import Member, Object, NotFound, User
+from discord import Member, Object, NotFound, User, Role
 from datetime import datetime, timedelta
 from discord.utils import find
 from typing import Optional
@@ -76,6 +77,21 @@ class Mod(Cog):
         add_temp_ban_entry(target.id, end_time, target.guild.id)
         await target.ban(reason=reason)
 
+    async def _mute(self, target: Member, end_time: timedelta, mute_type):
+        add_temp_mute_entry(target.id, end_time, mute_type, target.guild.id)
+
+        if mute_type == "text" or mute_type == "all":
+            for channel in target.guild.text_channels:
+                perms = channel.overwrites_for(target)
+                perms.send_messages = False
+                await channel.set_permissions(target, overwrite=perms)
+
+        if mute_type == "voice" or mute_type == "all":
+            for channel in target.guild.voice_channels:
+                perms = channel.overwrites_for(target)
+                perms.speak = False
+                await channel.set_permissions(target, overwrite=perms)
+
     async def _wait_and_unban(self, target: Member = None, entry: list = None):
         assert target is not None or entry is not None
         end_date = datetime.utcnow()
@@ -103,10 +119,47 @@ class Mod(Cog):
         finally:
             delete_temp_ban_entry(target.id, guild.id)
 
+    async def _wait_and_unmute(self, target: Member = None, entry: list = None):
+        end_date = datetime.utcnow()
+        guild = None
+        mute_type = None
+
+        if target:
+            _, end_date, mute_type, _ = get_temp_mute_entry(target.id, target.guild.id)
+            guild = target.guild
+        elif entry:
+            target_id, end_date, mute_type, guild_id = entry
+            guild = self.bot.get_guild(guild_id)
+            target = guild.get_member(user_id=target_id)
+
+        if end_date > datetime.utcnow():
+            delta_time = end_date - datetime.utcnow()
+            await sleep(delta_time.total_seconds())
+
+        if mute_type == "text" or mute_type == "all":
+            for channel in guild.text_channels:
+                perms = channel.overwrites_for(target)
+                perms.send_messages = True
+                await channel.set_permissions(target, overwrite=perms)
+
+        if mute_type == "voice" or mute_type == "all":
+            for channel in guild.voice_channels:
+                perms = channel.overwrites_for(target)
+                perms.speak = True
+                await channel.set_permissions(target, overwrite=perms)
+
+        await send_unmute_embeds(target)
+        delete_temp_mute_entry(target.id, guild.id)
+
     async def _reload_temp_bans_waiting(self):
         if all_entries := get_all_temp_ban_entries():
             for entry in all_entries:
                 await self._wait_and_unban(entry=entry)
+
+    async def _reload_temp_mutes_waiting(self):
+        if all_entries := get_all_temp_mute_entries():
+            for entry in all_entries:
+                await self._wait_and_unmute(entry=entry)
 
     @command(name="temp_ban")
     @bot_has_permissions(ban_members=True)
@@ -145,30 +198,16 @@ class Mod(Cog):
 
         if ctx.guild.me.top_role.position > target.top_role.position \
                 and not target.guild_permissions.administrator:
-
-            for channel in ctx.guild.channels:
-                perms = channel.overwrites_for(target)
-
-                if mute_type == "text":
-                    perms.send_messages = False
-                elif mute_type == "voice":
-                    perms.speak = False
-                elif mute_type == "all":
-                    perms.send_messages = False
-                    perms.speak = False
-
-                await channel.set_permissions(target, overwrite=perms)
+            await self._mute(target, time.get_end_time(), mute_type)
+            await send_mute_embeds(target, time.__str__(), reason)
 
             # TODO remove next line
             await ctx.send(f"Muted {target.mention}", delete_after=10)
 
-            await send_mute_embeds(target, time.__str__(), reason)
-
         else:
             raise MissingPermissions
 
-        await sleep(time.get_seconds())
-        await self.unmute_user(ctx, target, unmute_type=mute_type)
+        await self._wait_and_unmute(target=target)
 
     @bot_has_permissions(manage_roles=True)
     @has_permissions(manage_roles=True)
@@ -181,20 +220,17 @@ class Mod(Cog):
         if ctx.guild.me.top_role.position > target.top_role.position \
                 and not target.guild_permissions.administrator:
 
-            for channel in ctx.guild.channels:
-                perms = ctx.channel.overwrites_for(target)
-
-                if unmute_type == "text":
+            if unmute_type == "text" or unmute_type == "all":
+                for channel in target.guild.text_channels:
+                    perms = channel.overwrites_for(target)
                     perms.send_messages = True
-                elif unmute_type == "voice":
-                    perms.speak = True
-                elif unmute_type == "all":
-                    perms.send_messages = True
-                    perms.speak = True
+                    await channel.set_permissions(target, overwrite=perms)
 
-                await channel.set_permissions(target, overwrite=perms)
-
-                await send_unmute_embeds(target)
+            if unmute_type == "voice" or unmute_type == "all":
+                for channel in target.guild.voice_channels:
+                    perms = channel.overwrites_for(target)
+                    perms.speak = True
+                    await channel.set_permissions(target, overwrite=perms)
 
                 # TODO remove next line
                 await ctx.send(f"Unmuted {target.mention}", delete_after=10)
@@ -272,18 +308,18 @@ class Mod(Cog):
         if not target:
             raise BadArgument
 
-        update_warn_entry(target.id, reason)
+        update_warn_entry(target.id, target.guild.id, reason)
         await send_warn_embeds(target, reason)
 
         # TODO remove next line
         await ctx.send(f"Warned {target.mention}", delete_after=10)
 
-        if (num_warns := get_warn_entry(target.id)[1]) % NUM_WARNS_TO_TEMP_BAN == 0:
+        if (num_warns := get_warn_entry(target.id, target.guild.id)[1]) % NUM_WARNS_TO_TEMP_BAN == 0:
             # TODO find more accurate way to temp_ban, maybe write util. function
             await self.temp_ban_user(ctx, target,
                                      time=await TimeConverter().convert(ctx, arg=TIME_TO_TEMP_BAN),
                                      reason=f"Вы полчили очередные {NUM_WARNS_TO_TEMP_BAN} "
-                                            f"предупреждений и были забанены."
+                                            f"предуп    реждений и были забанены."
                                             f"Общее количево предупреждений: {num_warns}")
 
     @bot_has_permissions(manage_roles=True, ban_members=True)
@@ -306,9 +342,16 @@ class Mod(Cog):
         await ctx.message.delete()
         await ctx.send(phrase)
 
+    @bot_has_permissions(manage_roles=True)
+    @has_permissions(manage_roles=True)
+    @command(name="temp_role")
+    async def assign_temp_role(self, ctx: Context, target: Member, role: Role, time: TimeConverter()):
+        pass
+
     @Cog.listener()
     async def on_ready(self):
         await self._reload_temp_bans_waiting()
+        await self._reload_temp_mutes_waiting()
 
 
 def setup(bot):

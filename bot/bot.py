@@ -3,6 +3,7 @@ from config.config import TOKEN, PREFIX, OWNER_IDS, COGS_DIR
 from discord.ext.commands import MissingRequiredArgument
 from discord.ext.commands import Bot as BaseBot
 from os.path import splitext, basename
+from discord import Intents
 from glob import glob
 
 
@@ -12,8 +13,8 @@ class Bot(BaseBot):
         self.TOKEN = TOKEN
         self.OWNER_IDS = OWNER_IDS
         self.ready = False
-
-        super(Bot, self).__init__(command_prefix=self.PREFIX, owner_ids=self.OWNER_IDS)
+        intents = Intents().all()
+        super(Bot, self).__init__(command_prefix=self.PREFIX, owner_ids=self.OWNER_IDS, intents=intents)
 
     async def on_ready(self):
         if not self.ready:
