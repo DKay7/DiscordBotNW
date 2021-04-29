@@ -91,3 +91,27 @@ def get_all_temp_mute_entries():
 
     except sqlite3.OperationalError:
         pass
+
+
+@with_commit
+def add_temp_role_entry(user_id, end_time, role_id, guild_id):
+    cursor.execute("INSERT OR REPLACE INTO temp_roles VALUES (?, ?, ?, ?)", (user_id, end_time, role_id, guild_id))
+
+
+@with_commit
+def delete_temp_role_entry(user_id, guild_id):
+    cursor.execute("DELETE FROM temp_roles WHERE (UserID=? AND GuildID=?)", (user_id, guild_id))
+
+
+def get_temp_role_entry(user_id, guild_id):
+    cursor.execute("SELECT * FROM temp_roles WHERE (UserID=? AND GuildID=?)", (user_id, guild_id))
+    return cursor.fetchone()
+
+
+def get_all_temp_role_entries():
+    try:
+        cursor.execute("SELECT * FROM temp_roles")
+        return cursor.fetchall()
+
+    except sqlite3.OperationalError:
+        pass

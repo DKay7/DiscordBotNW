@@ -32,6 +32,9 @@ class Bot(BaseBot):
         raise
 
     async def on_command_error(self, ctx: Context, exc):
+        if hasattr(exc, "original"):
+            exc = exc.original
+
         if isinstance(exc, CommandNotFound):
             pass
 
@@ -47,8 +50,6 @@ class Bot(BaseBot):
         elif isinstance(exc, BadArgument):
             await ctx.send("Некорректный аргумент команды")
 
-        elif hasattr(exc, "original"):
-            raise exc.original
         else:
             raise exc
 

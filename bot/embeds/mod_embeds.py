@@ -52,7 +52,7 @@ async def send_kick_embeds(user, link, reason):
 
     for embed in kick_embeds:
         if embed.description:
-            embed.description = embed.description.format(reason=reason)
+            embed.description = embed.description.format(reason=reason, link=link)
 
         await user.send(embed=embed)
 

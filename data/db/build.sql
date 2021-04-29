@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS temp_mutes (
 CREATE TABLE IF NOT EXISTS temp_roles (
  UserID integer,
  EndTime timestamp,
+ RoleID integer,
  GuildID integer,
  PRIMARY KEY(UserID, GuildID)
 );
