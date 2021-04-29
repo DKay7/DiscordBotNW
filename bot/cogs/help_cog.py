@@ -22,7 +22,6 @@ class Help(Cog):
         self.bot.remove_command("help")
 
     async def cmd_help(self, ctx: Context, command: Command):
-        print(syntax(command))
         help_embed = Embed(title=f"Help with `{command}`",
                            description=syntax(command),
                            colour=ctx.author.colour)
