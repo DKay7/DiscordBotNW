@@ -1,0 +1,24 @@
+{
+  "content": null,
+  "embeds": [
+    {
+      "description": "⠀ ⠀ ⠀ ⠀ ⠀ ⠀    ⠀ ⠀ ⠀  ⠀  ╔ ⇒ <a:5866_Alphabet_K:837006564510269521><a:8500_Alphabet_I:837006577360961547><a:4559_Alphabet_C:837006594234646558><a:5866_Alphabet_K:837006564510269521><a:7273_Alphabet_E1:837006659519643678><a:3611_Alphabet_D:837298159482568745>⇐ ╗⠀⠀        ⠀ ⠀ ⠀ ⠀ ⠀ ⠀ ⠀ ⠀",
+      "color": 2562072
+    },
+    {
+      "title": "⠀  ⠀ ⠀ ⠀ ⠀ ︽︽︽︽︽︽︽︽︽ \n⠀ ⠀ ⠀ ⠀ ⇨ ⁑Участник сервера⁑ ⇦\n⠀  ⠀ ⠀ ⠀ ⠀ ︾︾︾︾︾︾︾︾︾\n                 ⠀  ⠀  ⠀       ⇓ ⇓ ⇓ \n⠀ ⠀⠀ ⠀  ⚶ ≲ ᴏᴜʀ ɴᴇᴡ ᴡᴏʀʟᴅ ≳ ⚶",
+      "description": "> ``‣`` Вы были **кикнуты** с сервера по причине: {reason}. <a:8663_AtencaoTKF1:782323880861237281>\n> ``‣`` Вы всегда можете зайти обратно на сервер по [ссылке]({link}) , но дальнейшее нарушение правил может привести к **бану**! <a:7134_ab1nzyblob2:776119000555192341>\n||Ps: https://discord.gg/Vaug4bjVch||",
+      "color": 2562072,
+      "footer": {
+        "text": "OWN Team",
+        "icon_url": "https://media.discordapp.net/attachments/620203233801142290/835171386875838474/IEa2_2.gif"
+      },
+      "image": {
+        "url": "https://media1.tenor.com/images/277d74b8f3d724fb78c72a07346d8373/tenor.gif?itemid=17496999"
+      },
+      "thumbnail": {
+        "url": "https://i.gifer.com/ZWdx.gif"
+      }
+    }
+  ]
+}
