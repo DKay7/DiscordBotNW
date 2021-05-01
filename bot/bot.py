@@ -1,6 +1,6 @@
 from config.config import TOKEN, PREFIX, OWNER_IDS, COGS_DIR, GUILD_ID, WARS_CHANNEL_ID, COMMON_RATING_CHANNEL_ID
 from discord.ext.commands import Context, CommandNotFound, CommandOnCooldown, MissingPermissions, BadArgument
-from discord.ext.commands import MissingRequiredArgument, PrivateMessageOnly
+from discord.ext.commands import MissingRequiredArgument, PrivateMessageOnly, NoPrivateMessage
 from discord.ext.commands import Bot as BaseBot
 from os.path import splitext, basename
 from discord import Intents
@@ -34,7 +34,8 @@ class Bot(BaseBot):
             print(f'RE-Logged in as {self.user}')
 
     async def on_error(self, err, *args, **kwargs):
-        await args[0].send("An error occurred")
+        if args and hasattr(args[0], "send"):
+            await args[0].send("Возникла ошибка")
         raise
 
     async def on_command_error(self, ctx: Context, exc):
@@ -46,6 +47,9 @@ class Bot(BaseBot):
 
         elif isinstance(exc, PrivateMessageOnly):
             await ctx.send(f'Команда может быть использована только в личных сообщениях с ботом')
+
+        elif isinstance(exc, NoPrivateMessage):
+            await ctx.send(f'Команда может быть использована только на сервере с ботом')
 
         elif isinstance(exc, CommandOnCooldown):
             await ctx.send(f'Команда на колдауне. Попробуйте снова через {exc.retry_after:,.2f} сек.')

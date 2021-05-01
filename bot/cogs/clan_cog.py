@@ -1,8 +1,10 @@
+from discord.ext.commands import MissingPermissions, guild_only, BadArgument
 from discord.ext.commands import Cog, command, Context, MissingRequiredArgument, dm_only
 from discord import Member, Reaction, User, Permissions, Guild, PermissionOverwrite, Color
-from config.config import CLAN_LEADER_OFFER_MESSAGE_DIR, CLAN_LEADER_ROLE, CLAN_CHANNELS_PERMS_PATTERN
+from config.config import CLAN_LEADER_OFFER_MESSAGE_DIR, CLAN_LEADER_ROLE, CLAN_CHANNELS_PERMS_ROLES_PATTERN
 from config.config import CLAN_MEMBER_ROLE, CLAN_DEP_ROLE, user_types, channels
 from discord.abc import PrivateChannel
+from discord.utils import get
 from json import loads
 
 
@@ -26,6 +28,24 @@ class ClanCog(Cog):
         # TODO remove next line
         await ctx.send(f"Пользователю {prospective_leader.mention} было отправлено предложение стать лидером")
 
+    @guild_only()
+    @command(name="choose_dep")
+    async def choose_dep(self, ctx: Context, dep_candidate: Member, clan_name: str):
+        if not self._check_leader(ctx.author, clan_name):
+            raise MissingPermissions("leader role")
+
+        role_name = load_file(CLAN_DEP_ROLE)["name"].format(clan_name=clan_name)
+        dep_role = get(self.bot.guild.roles, name=role_name)
+
+        if not dep_role:
+            raise BadArgument
+
+        if dep_role in dep_candidate.roles:
+            await ctx.send(f"{dep_candidate.mention} уже заместитель клана {clan_name}")
+
+        await dep_candidate.add_roles(dep_role)
+        await ctx.send(f"Пользователь {dep_candidate.mention} был назначен заместителем клана {clan_name}")
+
     @dm_only()
     @command(name="create_clan")
     async def create_new_clan(self, ctx: Context, *, clan_name: str):
@@ -41,7 +61,7 @@ class ClanCog(Cog):
         await self.bot.common_rating_channel.set_permissions(leader_role, send_messages=True, read_messages=True)
         await self.bot.wars_channel.set_permissions(leader_role, send_messages=True, read_messages=True)
 
-        await ctx.send(f"Clan `{clan_name}` was successfully created")
+        await ctx.send(f"Клан `{clan_name}` был удачно создан")
 
     @Cog.listener()
     async def on_reaction_add(self, reaction: Reaction, user: User):
@@ -89,13 +109,13 @@ class ClanCog(Cog):
         perms_overwrites = {guild.default_role: PermissionOverwrite(read_messages=False)}
         clan_category = await guild.create_category(f"Clan {clan_name}", overwrites=perms_overwrites)
 
-        for channel in channels:
-            for index, user_type in enumerate(user_types):
-                perms = load_file(CLAN_CHANNELS_PERMS_PATTERN.format(user_type=user_type, channel_type=channel))
+        for channel_key, channel in channels.items():
+            for index, user_type in enumerate(user_types.values()):
+                perms = load_file(CLAN_CHANNELS_PERMS_ROLES_PATTERN.format(user_type=user_type, channel_type=channel))
 
                 perms_overwrites.update({clan_roles[index]: PermissionOverwrite(**perms)})
 
-            if "voice" in channel:
+            if "voice" in channel_key:
                 await guild.create_voice_channel(f"{channel}_{clan_name}",
                                                  overwrites=perms_overwrites,
                                                  category=clan_category)
@@ -103,6 +123,18 @@ class ClanCog(Cog):
                 await guild.create_text_channel(f"{channel}_{clan_name}",
                                                 overwrites=perms_overwrites,
                                                 category=clan_category)
+
+    def _check_leader(self, leader: Member, clan_name: str):
+        pass_check = False
+
+        for role in leader.roles:
+            role_name = role.name.lower()
+            if "leader" in role_name and clan_name.lower() in role_name \
+               and "dep" not in role_name:
+                pass_check = True
+                break
+
+        return pass_check
 
 
 def load_file(filename):
