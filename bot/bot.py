@@ -1,6 +1,6 @@
+from config.config import TOKEN, PREFIX, OWNER_IDS, COGS_DIR, GUILD_ID, WARS_CHANNEL_ID, COMMON_RATING_CHANNEL_ID
 from discord.ext.commands import Context, CommandNotFound, CommandOnCooldown, MissingPermissions, BadArgument
-from config.config import TOKEN, PREFIX, OWNER_IDS, COGS_DIR
-from discord.ext.commands import MissingRequiredArgument
+from discord.ext.commands import MissingRequiredArgument, PrivateMessageOnly
 from discord.ext.commands import Bot as BaseBot
 from os.path import splitext, basename
 from discord import Intents
@@ -12,6 +12,9 @@ class Bot(BaseBot):
         self.PREFIX = PREFIX
         self.TOKEN = TOKEN
         self.OWNER_IDS = OWNER_IDS
+        self.guild = None
+        self.wars_channel = None
+        self.common_rating_channel = None
         self.ready = False
         intents = Intents().all()
         super(Bot, self).__init__(command_prefix=self.PREFIX, owner_ids=self.OWNER_IDS, intents=intents)
@@ -23,6 +26,9 @@ class Bot(BaseBot):
 
             print(f'Logged in as {self.user}')
             self.ready = True
+            self.guild = self.get_guild(GUILD_ID)
+            self.wars_channel = self.guild.get_channel(WARS_CHANNEL_ID)
+            self.common_rating_channel = self.guild.get_channel(COMMON_RATING_CHANNEL_ID)
 
         else:
             print(f'RE-Logged in as {self.user}')
@@ -38,6 +44,9 @@ class Bot(BaseBot):
         if isinstance(exc, CommandNotFound):
             pass
 
+        elif isinstance(exc, PrivateMessageOnly):
+            await ctx.send(f'Команда может быть использована только в личных сообщениях с ботом')
+
         elif isinstance(exc, CommandOnCooldown):
             await ctx.send(f'Команда на колдауне. Попробуйте снова через {exc.retry_after:,.2f} сек.')
 
@@ -45,7 +54,7 @@ class Bot(BaseBot):
             await ctx.send(f'У вас нет необходимых разрешений для запуска этой команды')
 
         elif isinstance(exc, MissingRequiredArgument):
-            await ctx.send("Не найдены один или несколько обязательных аргументов команды")
+            await ctx.send(f"Не найден обязательный аргумент команды {exc.param.name}")
 
         elif isinstance(exc, BadArgument):
             await ctx.send("Некорректный аргумент команды")
