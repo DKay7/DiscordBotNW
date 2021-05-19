@@ -1,20 +1,18 @@
-from utils.db.db_mod_utils import get_all_temp_role_entries, get_all_temp_ban_entries, get_all_temp_mute_entries
-from utils.db.db_mod_utils import delete_temp_role_entry, delete_temp_ban_entry, delete_temp_mute_entry
-from utils.db.db_mod_utils import add_temp_role_entry, add_temp_ban_entry, add_temp_mute_entry
-from utils.db.db_mod_utils import get_temp_role_entry, get_temp_ban_entry, get_temp_mute_entry
+from utils.mod_utils.temp_commands_utils import temp_ban_user, temp_mute_user, temp_role_user
+from utils.mod_utils.temp_commands_utils import wait_and_unban, wait_and_unmute
+from utils.mod_utils.temp_commands_utils import reload_temp_mutes_waiting, reload_temp_role_waiting
+from utils.mod_utils.temp_commands_utils import wait_and_remove_role, reload_temp_bans_waiting
 from utils.db.db_mod_utils import update_warn_entry, get_warn_entry, unwarn_entry
-
+from utils.db.db_mod_utils import delete_temp_mute_entry, delete_temp_ban_entry
 from discord.ext.commands import Cog, Context, command, bot_has_permissions, has_permissions, MissingRequiredArgument
 from bot.embeds.mod_embeds import send_temp_ban_embeds, send_ban_embeds,  send_kick_embeds
-from bot.embeds.mod_embeds import send_mute_embeds, send_unmute_embeds, send_warn_embeds
-from discord.ext.commands import BadArgument, MissingPermissions
-from config.bot_config import NUM_WARNS_TO_TEMP_BAN, TIME_TO_TEMP_BAN
-from discord import Member, Object, NotFound, User, Role
-from datetime import datetime, timedelta
-from typing import Optional
-from asyncio import sleep
-
+from config.mod_config import NUM_WARNS_TO_TEMP_BAN, TIME_TO_TEMP_BAN
 from utils.mod_utils.data_converters import BannedUser, TimeConverter
+from bot.embeds.mod_embeds import send_mute_embeds, send_warn_embeds
+from discord.ext.commands import BadArgument, MissingPermissions
+from bot.embeds.mod_embeds import send_unmute_embeds
+from discord import Member, Role
+from typing import Optional
 
 
 class Mod(Cog):
@@ -22,126 +20,6 @@ class Mod(Cog):
         self.bot = bot
         self.text_mute_role = None
         self.voice_mute_role = None
-
-    async def _ban(self, target: Member, end_time: timedelta, reason: str):
-        add_temp_ban_entry(target.id, end_time, target.guild.id)
-        await target.ban(reason=reason)
-
-    async def _mute(self, target: Member, end_time: timedelta, mute_type):
-        add_temp_mute_entry(target.id, end_time, mute_type, target.guild.id)
-
-        if mute_type == "text" or mute_type == "all":
-            for channel in target.guild.text_channels:
-                perms = channel.overwrites_for(target)
-                perms.send_messages = False
-                await channel.set_permissions(target, overwrite=perms)
-
-        if mute_type == "voice" or mute_type == "all":
-            for channel in target.guild.voice_channels:
-                perms = channel.overwrites_for(target)
-                perms.speak = False
-                await channel.set_permissions(target, overwrite=perms)
-
-    async def _assign_role(self, target: Member, end_time: timedelta, role: Role):
-        add_temp_role_entry(target.id, end_time, role.id, target.guild.id)
-        await target.add_roles(role)
-
-    async def _wait_and_unban(self, target: Member = None, entry: list = None):
-        assert target is not None or entry is not None
-        end_date = datetime.utcnow()
-        guild = None
-
-        if target:
-            _, end_date, _ = get_temp_ban_entry(target.id, target.guild.id)
-            guild = target.guild
-        elif entry:
-            target_id, end_date, guild_id = entry
-            guild = self.bot.get_guild(guild_id)
-            target = (await guild.fetch_ban(Object(id=int(target_id)))).user
-
-        if end_date > datetime.utcnow():
-            delta_time = end_date - datetime.utcnow()
-            await sleep(delta_time.total_seconds())
-
-        try:
-            if isinstance(target, User):
-                await guild.unban(user=target, reason="Temp. ban ended")
-            elif isinstance(target, Member):
-                await target.unban(reason="Temp. ban ended")
-        except NotFound:
-            raise
-        finally:
-            delete_temp_ban_entry(target.id, guild.id)
-
-    async def _wait_and_unmute(self, target: Member = None, entry: list = None):
-        assert target is not None or entry is not None
-        end_date = datetime.utcnow()
-        guild = None
-        mute_type = None
-
-        if target:
-            _, end_date, mute_type, _ = get_temp_mute_entry(target.id, target.guild.id)
-            guild = target.guild
-        elif entry:
-            target_id, end_date, mute_type, guild_id = entry
-            guild = self.bot.get_guild(guild_id)
-            target = guild.get_member(user_id=target_id)
-
-        if end_date > datetime.utcnow():
-            delta_time = end_date - datetime.utcnow()
-            await sleep(delta_time.total_seconds())
-
-        if mute_type == "text" or mute_type == "all":
-            for channel in guild.text_channels:
-                perms = channel.overwrites_for(target)
-                perms.send_messages = True
-                await channel.set_permissions(target, overwrite=perms)
-
-        if mute_type == "voice" or mute_type == "all":
-            for channel in guild.voice_channels:
-                perms = channel.overwrites_for(target)
-                perms.speak = True
-                await channel.set_permissions(target, overwrite=perms)
-
-        await send_unmute_embeds(target)
-        delete_temp_mute_entry(target.id, guild.id)
-
-    async def _wait_and_remove_role(self, target: Member = None, entry: list = None):
-        assert target is not None or entry is not None
-        end_date = datetime.utcnow()
-        guild = None
-        role_id = None
-
-        if target:
-            _, end_date, role_id, _ = get_temp_role_entry(target.id, target.guild.id)
-            guild = target.guild
-        elif entry:
-            target_id, end_date, role_id, guild_id = entry
-            guild = self.bot.get_guild(guild_id)
-            target = guild.get_member(user_id=target_id)
-
-        if end_date > datetime.utcnow():
-            delta_time = end_date - datetime.utcnow()
-            await sleep(delta_time.total_seconds())
-
-        role = guild.get_role(role_id=role_id)
-        await target.remove_roles(role)
-        delete_temp_role_entry(target.id, guild.id)
-
-    async def _reload_temp_bans_waiting(self):
-        if all_entries := get_all_temp_ban_entries():
-            for entry in all_entries:
-                await self._wait_and_unban(entry=entry)
-
-    async def _reload_temp_mutes_waiting(self):
-        if all_entries := get_all_temp_mute_entries():
-            for entry in all_entries:
-                await self._wait_and_unmute(entry=entry)
-
-    async def _reload_temp_role_waiting(self):
-        if all_entries := get_all_temp_role_entries():
-            for entry in all_entries:
-                await self._wait_and_remove_role(entry=entry)
 
     @command(name="temp_ban")
     @bot_has_permissions(ban_members=True)
@@ -160,7 +38,7 @@ class Mod(Cog):
             link = await ctx.channel.create_invite(max_uses=1, unique=True)
 
             await send_temp_ban_embeds(target, time.__str__(), link, reason)
-            await self._ban(target, time.get_end_time(), reason)
+            await temp_ban_user(target, time.get_end_time(), reason)
 
             # TODO remove next line
             await ctx.send(f"Banned {target.mention}", delete_after=10)
@@ -168,7 +46,7 @@ class Mod(Cog):
         else:
             raise MissingPermissions("Нельзя банить участника с более высокой ролью")
 
-        await self._wait_and_unban(target=target)
+        await wait_and_unban(bot=self.bot, target=target)
         # TODO remove next line
         await ctx.send(f"Unbanned {target.mention}", delete_after=10)
 
@@ -189,7 +67,7 @@ class Mod(Cog):
 
         if ctx.guild.me.top_role.position > target.top_role.position \
                 and not target.guild_permissions.administrator:
-            await self._mute(target, time.get_end_time(), mute_type)
+            await temp_mute_user(target, time.get_end_time(), mute_type)
             await send_mute_embeds(target, time.__str__(), reason)
 
             # TODO remove next line
@@ -198,7 +76,7 @@ class Mod(Cog):
         else:
             raise MissingPermissions("Нельзя мутить участника с более высокой ролью")
 
-        await self._wait_and_unmute(target=target)
+        await wait_and_unmute(bot=self.bot, target=target)
 
     @bot_has_permissions(manage_roles=True)
     @has_permissions(manage_roles=True)
@@ -230,6 +108,8 @@ class Mod(Cog):
 
                 # TODO remove next line
                 await ctx.send(f"Unmuted {target.mention}", delete_after=10)
+                delete_temp_mute_entry(target.id, ctx.guild.id)
+                await send_unmute_embeds(target)
             else:
                 raise MissingPermissions("Нельзя анмутить участника с более высокой ролью")
 
@@ -261,6 +141,8 @@ class Mod(Cog):
             raise MissingRequiredArgument("Цель")
 
         await ctx.guild.unban(target, reason=reason)
+        delete_temp_ban_entry(target.id, ctx.guild.id)
+
         # TODO remove next line
         await ctx.send(f"Unbanned {target.mention}", delete_after=10)
 
@@ -310,13 +192,13 @@ class Mod(Cog):
         # TODO remove next line
         await ctx.send(f"Warned {target.mention}", delete_after=10)
 
-        if (num_warns := get_warn_entry(target.id, target.guild.id)[1]) % NUM_WARNS_TO_TEMP_BAN == 0:
+        if (num_warns := get_warn_entry(target.id, target.guild.id)[2]) % NUM_WARNS_TO_TEMP_BAN == 0:
 
             await self.temp_ban_user(ctx, target,
                                      time=await TimeConverter().convert(ctx, arg=TIME_TO_TEMP_BAN),
                                      reason=f"Вы получили очередные {NUM_WARNS_TO_TEMP_BAN} "
                                             f"предупреждений и были забанены."
-                                            f"Общее количево предупреждений: {num_warns}")
+                                            f"Общее количество предупреждений: {num_warns}")
 
     @bot_has_permissions(manage_roles=True, ban_members=True)
     @has_permissions(manage_roles=True, ban_members=True)
@@ -341,10 +223,10 @@ class Mod(Cog):
         if not time:
             raise MissingRequiredArgument(time)
 
-        await self._assign_role(target, time.get_end_time(), role)
+        await temp_role_user(target, time.get_end_time(), role)
         # TODO remove next line
         await ctx.send(f"Assign role {role.mention} to {target.mention}", delete_after=10)
-        await self._wait_and_remove_role(target=target)
+        await wait_and_remove_role(bot=self.bot, target=target)
 
     @command(name="echo")
     async def echo(self, ctx: Context, *, phrase: str):
@@ -357,9 +239,9 @@ class Mod(Cog):
     @Cog.listener()
     async def on_ready(self):
         # remembers all temp-muted/temp-banned/temp-rolled users
-        self.bot.loop.create_task(self._reload_temp_bans_waiting())
-        self.bot.loop.create_task(self._reload_temp_mutes_waiting())
-        self.bot.loop.create_task(self._reload_temp_role_waiting())
+        self.bot.loop.create_task(reload_temp_bans_waiting(self.bot))
+        self.bot.loop.create_task(reload_temp_mutes_waiting(self.bot))
+        self.bot.loop.create_task(reload_temp_role_waiting(self.bot))
 
 
 def setup(bot):

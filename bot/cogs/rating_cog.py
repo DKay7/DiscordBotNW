@@ -31,7 +31,7 @@ class RatingCog(Cog):
         guild = channel.guild
 
         if state_before.channel != state_after.channel \
-                and guild not in restricted_guilds:
+                and guild.id not in restricted_guilds:
 
             if not state_before.channel:
                 # TODO remove next line

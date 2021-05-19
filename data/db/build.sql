@@ -1,31 +1,31 @@
 CREATE TABLE IF NOT EXISTS warns (
  UserID integer,
- NumWarns integer DEFAULT 0,
- LastReasons text DEFAULT "",
  GuildID integer,
+ NumWarns integer,
+ LastReasons text,
  PRIMARY KEY(UserID, GuildID)
 );
 
 CREATE TABLE IF NOT EXISTS temp_bans (
  UserID integer,
- EndTime timestamp,
  GuildID integer,
+ EndTime timestamp,
  PRIMARY KEY(UserID, GuildID)
 );
 
 CREATE TABLE IF NOT EXISTS temp_mutes (
  UserID integer,
+ GuildID integer,
  EndTime timestamp,
  MuteType text,
- GuildID integer,
  PRIMARY KEY(UserID, GuildID)
 );
 
 CREATE TABLE IF NOT EXISTS temp_roles (
  UserID integer,
+ GuildID integer,
  EndTime timestamp,
  RoleID integer,
- GuildID integer,
  PRIMARY KEY(UserID, GuildID)
 );
 
