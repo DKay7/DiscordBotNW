@@ -1,11 +1,12 @@
 from discord.ext.commands import MissingPermissions, guild_only, BadArgument
 from discord.ext.commands import Cog, command, Context, MissingRequiredArgument, dm_only
-from discord import Member, Reaction, User, Permissions, Guild, PermissionOverwrite, Color
-from config.config import CLAN_LEADER_OFFER_MESSAGE_DIR, CLAN_LEADER_ROLE, CLAN_CHANNELS_PERMS_ROLES_PATTERN
-from config.config import CLAN_MEMBER_ROLE, CLAN_DEP_ROLE, user_types, channels
+from discord import Member, Reaction, User, Permissions, Guild, PermissionOverwrite
+from config.clan_config import CLAN_LEADER_OFFER_MESSAGE_DIR, CLAN_LEADER_ROLE, CLAN_MEMBER_ROLE, CLAN_DEP_ROLE, \
+    user_types, channels, CLAN_CHANNELS_PERMS_ROLES_PATTERN
 from discord.abc import PrivateChannel
 from discord.utils import get
-from json import loads
+
+from utils.clan_utils.getters_and_loaders import load_file, get_message_reactions, get_colour
 
 
 class ClanCog(Cog):
@@ -135,36 +136,6 @@ class ClanCog(Cog):
                 break
 
         return pass_check
-
-
-def load_file(filename):
-    with open(filename, 'r', encoding="utf-8") as file:
-        result_dict = loads(file.read())
-
-    return result_dict
-
-
-def get_message_reactions(filename):
-    with open(filename, 'r', encoding="utf-8") as file:
-        result_dict = loads(file.read())
-
-    yes = result_dict['yes']
-    no = result_dict['no']
-
-    yes_start_index = yes.rfind(":")
-    no_start_index = no.rfind(":")
-
-    yes = int(yes[yes_start_index+1:-1])
-    no = int(no[no_start_index+1:-1])
-
-    return {"yes": yes, "no": no}
-
-
-def get_colour(role_config, clan_name):
-    if role_config["colour"] == "random":
-        return Color.random(seed=role_config["name"].format(clan_name=clan_name))
-    else:
-        return role_config["colour"]
 
 
 def setup(bot):

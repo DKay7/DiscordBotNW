@@ -28,3 +28,18 @@ CREATE TABLE IF NOT EXISTS temp_roles (
  GuildID integer,
  PRIMARY KEY(UserID, GuildID)
 );
+
+CREATE TABLE IF NOT EXISTS voice_rating_trace (
+ UserID integer,
+ GuildID integer,
+ StartTime timestamp,
+ PRIMARY KEY(UserID, GuildID)
+);
+
+CREATE TABLE IF NOT EXISTS rating (
+ UserID integer,
+ GuildID integer,
+ Rating float,
+ Level integer,
+ PRIMARY KEY(UserID, GuildID)
+);

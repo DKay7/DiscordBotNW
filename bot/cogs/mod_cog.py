@@ -1,73 +1,20 @@
-from db.db_mod_utils import get_all_temp_role_entries, get_all_temp_ban_entries, get_all_temp_mute_entries
-from db.db_mod_utils import delete_temp_role_entry, delete_temp_ban_entry, delete_temp_mute_entry
-from db.db_mod_utils import add_temp_role_entry, add_temp_ban_entry, add_temp_mute_entry
-from db.db_mod_utils import get_temp_role_entry, get_temp_ban_entry, get_temp_mute_entry
-from db.db_mod_utils import update_warn_entry, get_warn_entry, unwarn_entry
+from utils.db.db_mod_utils import get_all_temp_role_entries, get_all_temp_ban_entries, get_all_temp_mute_entries
+from utils.db.db_mod_utils import delete_temp_role_entry, delete_temp_ban_entry, delete_temp_mute_entry
+from utils.db.db_mod_utils import add_temp_role_entry, add_temp_ban_entry, add_temp_mute_entry
+from utils.db.db_mod_utils import get_temp_role_entry, get_temp_ban_entry, get_temp_mute_entry
+from utils.db.db_mod_utils import update_warn_entry, get_warn_entry, unwarn_entry
 
 from discord.ext.commands import Cog, Context, command, bot_has_permissions, has_permissions, MissingRequiredArgument
 from bot.embeds.mod_embeds import send_temp_ban_embeds, send_ban_embeds,  send_kick_embeds
 from bot.embeds.mod_embeds import send_mute_embeds, send_unmute_embeds, send_warn_embeds
-from discord.ext.commands import Converter, BadArgument, MissingPermissions
-from config.config import NUM_WARNS_TO_TEMP_BAN, TIME_TO_TEMP_BAN
+from discord.ext.commands import BadArgument, MissingPermissions
+from config.bot_config import NUM_WARNS_TO_TEMP_BAN, TIME_TO_TEMP_BAN
 from discord import Member, Object, NotFound, User, Role
 from datetime import datetime, timedelta
-from discord.utils import find
 from typing import Optional
 from asyncio import sleep
 
-
-class BannedUser(Converter):
-    async def convert(self, ctx, arg):
-        if ctx.guild.me.guild_permissions.ban_members:
-            if arg.isdigit():
-                try:
-                    return (await ctx.guild.fetch_ban(Object(id=int(arg)))).user
-                except NotFound:
-                    raise BadArgument
-
-            banned_users = [e.user for e in await ctx.guild.bans()]
-            if banned_users:
-                if (user := find(lambda u: str(u) == arg[1:] or str(u) == arg, banned_users)) is not None:
-                    return user
-                else:
-                    await ctx.send(f"Пользователь не найден среди забаненных")
-                    raise BadArgument
-            else:
-                await ctx.send(f"Список забаненных пользователей пуст")
-                raise BadArgument
-
-
-class TimeConverter(Converter):
-    def __init__(self):
-        self.minutes = 0
-        self.hours = 0
-        self.delta = timedelta()
-        self.end_date = datetime.utcnow()
-
-    async def convert(self, ctx, arg):
-        time_type = arg[-1]
-
-        if time_type not in ['h', 'm'] or not (arg := arg[:-1]).isdigit():
-            raise BadArgument
-
-        if time_type == 'h':
-            self.hours = int(arg)
-        elif time_type == 'm':
-            self.minutes = int(arg)
-
-        self.delta = timedelta(hours=self.hours, minutes=self.minutes)
-        self.end_date = datetime.utcnow() + self.delta
-
-        return self
-
-    def __str__(self):
-        return f"{self.hours} час., {self.minutes} мин."
-
-    def get_end_time(self):
-        return self.end_date
-
-    def get_seconds(self) -> float:
-        return self.delta.total_seconds()
+from utils.mod_utils.data_converters import BannedUser, TimeConverter
 
 
 class Mod(Cog):
@@ -378,7 +325,7 @@ class Mod(Cog):
         if not target:
             raise MissingRequiredArgument(target)
 
-        unwarn_entry(target.id)
+        unwarn_entry(target.id, ctx.guild.id)
 
         # TODO remove next line
         await ctx.send(f"UnWarned {target.mention}", delete_after=10)

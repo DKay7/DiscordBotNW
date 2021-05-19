@@ -1,6 +1,6 @@
 import sqlite3
 
-from config.config import WARN_NUM_STORED_REASONS
+from config.db_config import WARN_NUM_STORED_REASONS
 from discord.ext.commands import BadArgument
 from .db_build_utils import with_commit
 from .db_connection import cursor
@@ -35,12 +35,16 @@ def update_warn_entry(user_id, guild_id, new_reason):
 @with_commit
 def unwarn_entry(user_id, guild_id):
     if entry := get_warn_entry(user_id, guild_id):
-        _, num_warns, reasons = entry
+        _, num_warns, reasons, _ = entry
         num_warns = num_warns - 1 if num_warns - 1 >= 0 else 0
         reasons = loads(reasons)
         reasons = dumps(reasons[:-1])
-        cursor.execute("UPDATE warns SET NumWarns=?, LastReasons=? WHERE (UserID=? AND GuildID=?)",
-                       (num_warns, reasons, user_id, guild_id))
+        if num_warns == 0:
+            cursor.execute("DELETE FROM warns WHERE (UserID=? AND GuildID=?)",
+                           (user_id, guild_id))
+        else:
+            cursor.execute("UPDATE warns SET NumWarns=?, LastReasons=? WHERE (UserID=? AND GuildID=?)",
+                           (num_warns, reasons, user_id, guild_id))
     else:
         raise BadArgument
 
