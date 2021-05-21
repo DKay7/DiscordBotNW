@@ -1,7 +1,7 @@
 from .db_build_utils import with_commit
 from .db_connection import cursor, conn
-from config.rating_config import RATING_POINTS_PER_SEC_VOICE, RATING_POINTS_PER_ONE_MESSAGE, get_level_by_rating
-
+from config.rating.points_counter import RATING_POINTS_PER_SEC_VOICE, RATING_POINTS_PER_ONE_MESSAGE
+from config.rating.rating_to_level import get_level_by_rating
 
 conn.create_function("TO_LEVEL", 1, get_level_by_rating)
 
@@ -53,3 +53,37 @@ def get_level(user_id, guild_id):
         level = level[0]
 
         return level
+
+    else:
+        return 0
+
+
+def get_level_and_rating(user_id, guild_id):
+    entry = cursor.execute("SELECT Rating, Level FROM rating "
+                           "WHERE (UserID=? AND GuildID=?)", (user_id, guild_id)).fetchone()
+
+    if entry:
+        rating, level = entry
+        return rating, level
+    else:
+        return 0, 0
+
+
+def get_position(user_id, guild_id):
+    entry = cursor.execute("SELECT RowNum FROM ("
+                           "    SELECT ROW_NUMBER() OVER("
+                           "            ORDER BY Rating DESC"
+                           "     ) RowNum,"
+                           "       UserID,"
+                           "       GuildID "
+                           "    FROM rating"
+                           "    WHERE (GuildID=?)"
+                           ") "
+                           "WHERE (UserID=? AND GuildID=?)",
+                           (guild_id, user_id, guild_id)).fetchone()
+
+    if entry:
+        position = entry[0]
+        return position
+    else:
+        return "Not found"

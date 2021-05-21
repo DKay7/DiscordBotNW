@@ -1,4 +1,4 @@
-from config.db_config import BUILD_PATH
+from config.db.db_config import BUILD_PATH
 from .db_connection import conn, cursor
 from os.path import isfile
 

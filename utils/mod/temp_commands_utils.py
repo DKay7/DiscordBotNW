@@ -2,7 +2,7 @@ from utils.db.db_mod_utils import get_all_temp_role_entries, get_all_temp_ban_en
 from utils.db.db_mod_utils import delete_temp_role_entry, delete_temp_ban_entry, delete_temp_mute_entry
 from utils.db.db_mod_utils import add_temp_role_entry, add_temp_ban_entry, add_temp_mute_entry
 from utils.db.db_mod_utils import get_temp_role_entry, get_temp_ban_entry, get_temp_mute_entry
-from bot.embeds.mod_embeds import send_unmute_embeds
+from utils.mod.mod_embeds import send_unmute_embeds
 from discord import Member, Object, NotFound, User, Role
 from datetime import datetime, timedelta
 from asyncio import sleep

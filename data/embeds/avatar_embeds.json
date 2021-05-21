@@ -1,0 +1,10 @@
+{
+    "footer": {
+        "text": "𝙾𝚄𝚁 𝙽𝙴𝚆 𝚆𝙾𝚁𝙻𝙳",
+        "icon_url": "https://cdn.discordapp.com/icons/620004833960787968/93c1b104e968af36619e6e4de7cdba6c.png?size=1024"
+    },
+    "color": 65535,
+    "type": "rich",
+    "description": "{description}",
+    "title": "Аватар {username}"
+}

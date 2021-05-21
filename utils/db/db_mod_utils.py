@@ -1,5 +1,5 @@
 import sqlite3
-from ..mod_utils.add_reason_sql import append_warn_reason, add_warn_reason, remove_warn_reason
+from ..mod.add_reason_sql import append_warn_reason, add_warn_reason, remove_warn_reason
 from .db_build_utils import with_commit
 from .db_connection import cursor, conn
 

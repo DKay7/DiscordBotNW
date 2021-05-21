@@ -1,12 +1,12 @@
 from discord.ext.commands import MissingPermissions, guild_only, BadArgument
 from discord.ext.commands import Cog, command, Context, MissingRequiredArgument, dm_only
 from discord import Member, Reaction, User, Permissions, Guild, PermissionOverwrite
-from config.clan_config import CLAN_LEADER_OFFER_MESSAGE_DIR, CLAN_LEADER_ROLE, CLAN_MEMBER_ROLE, CLAN_DEP_ROLE, \
+from config.clan.clan_config import CLAN_LEADER_OFFER_MESSAGE_DIR, CLAN_LEADER_ROLE, CLAN_MEMBER_ROLE, CLAN_DEP_ROLE, \
     user_types, channels, CLAN_CHANNELS_PERMS_ROLES_PATTERN
 from discord.abc import PrivateChannel
 from discord.utils import get
 
-from utils.clan_utils.getters_and_loaders import load_file, get_message_reactions, get_colour
+from utils.clan.getters_and_loaders import load_file, get_message_reactions, get_colour
 
 
 class ClanCog(Cog):

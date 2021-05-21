@@ -1,0 +1,15 @@
+ACTIONS = {
+    "kiss": (2, "{username} поцеловал {username2}"),
+    "hug": (2, "{username} обнял {username2}"),
+    "highfive": (2, "{username} дал пять {username2}"),
+    "pat": (2, "{username} похлопал по плечу {username2}"),
+    "poke": (2, "{username} тыкнул {username2}"),
+    "punch": (2, "{username} ударил {username2}"),
+    "welcome": (2, "{username} приветствует {username2}"),
+    "cry": (1, "{username} заплакал"),
+    "suicide": (1, "{username} совершил суицид"),
+    "dance": (1, "{username} танцует"),
+    "wokeup": (1, "{username} проснулся"),
+    "dodge": (1, "{username} увернулся"),
+    "nom": (2, "{username} дал вкусняшку {username2}"),
+}

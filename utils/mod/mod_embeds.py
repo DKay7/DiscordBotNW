@@ -1,5 +1,5 @@
-from config.mod_config import TEMP_BAN_EMBEDS_DIR, BAN_EMBEDS_DIR, KICK_EMBEDS_DIR, WARN_EMBEDS_DIR, MUTE_EMBEDS_DIR, \
-    UNMUTE_EMBEDS_DIR
+from config.mod.mod_config import TEMP_BAN_EMBEDS_DIR, BAN_EMBEDS_DIR, KICK_EMBEDS_DIR, WARN_EMBEDS_DIR
+from config.mod.mod_config import UNMUTE_EMBEDS_DIR, MUTE_EMBEDS_DIR
 from discord import Embed
 from json import loads
 

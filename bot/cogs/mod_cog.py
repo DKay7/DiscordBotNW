@@ -1,16 +1,16 @@
-from utils.mod_utils.temp_commands_utils import temp_ban_user, temp_mute_user, temp_role_user
-from utils.mod_utils.temp_commands_utils import wait_and_unban, wait_and_unmute
-from utils.mod_utils.temp_commands_utils import reload_temp_mutes_waiting, reload_temp_role_waiting
-from utils.mod_utils.temp_commands_utils import wait_and_remove_role, reload_temp_bans_waiting
+from utils.mod.temp_commands_utils import temp_ban_user, temp_mute_user, temp_role_user
+from utils.mod.temp_commands_utils import wait_and_unban, wait_and_unmute
+from utils.mod.temp_commands_utils import reload_temp_mutes_waiting, reload_temp_role_waiting
+from utils.mod.temp_commands_utils import wait_and_remove_role, reload_temp_bans_waiting
 from utils.db.db_mod_utils import update_warn_entry, get_warn_entry, unwarn_entry
 from utils.db.db_mod_utils import delete_temp_mute_entry, delete_temp_ban_entry
 from discord.ext.commands import Cog, Context, command, bot_has_permissions, has_permissions, MissingRequiredArgument
-from bot.embeds.mod_embeds import send_temp_ban_embeds, send_ban_embeds,  send_kick_embeds
-from config.mod_config import NUM_WARNS_TO_TEMP_BAN, TIME_TO_TEMP_BAN
-from utils.mod_utils.data_converters import BannedUser, TimeConverter
-from bot.embeds.mod_embeds import send_mute_embeds, send_warn_embeds
+from utils.mod.mod_embeds import send_temp_ban_embeds, send_ban_embeds,  send_kick_embeds
+from config.mod.mod_config import NUM_WARNS_TO_TEMP_BAN, TIME_TO_TEMP_BAN
+from utils.mod.data_converters import BannedUser, TimeConverter
+from utils.mod.mod_embeds import send_mute_embeds, send_warn_embeds
 from discord.ext.commands import BadArgument, MissingPermissions
-from bot.embeds.mod_embeds import send_unmute_embeds
+from utils.mod.mod_embeds import send_unmute_embeds
 from discord import Member, Role
 from typing import Optional
 

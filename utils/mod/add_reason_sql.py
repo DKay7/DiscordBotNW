@@ -1,5 +1,5 @@
 from json import loads, dumps
-from config.db_config import WARN_NUM_STORED_REASONS
+from config.db.db_config import WARN_NUM_STORED_REASONS
 
 
 def append_warn_reason(reasons, new_reason):

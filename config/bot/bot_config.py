@@ -1,4 +1,4 @@
-from .config import env
+from config.main.config import env
 
 PREFIX = '\\'
 TOKEN = env.str('TOKEN')

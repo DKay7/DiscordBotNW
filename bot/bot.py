@@ -1,5 +1,5 @@
-from config.mod_config import COGS_DIR
-from config.bot_config import PREFIX, TOKEN, OWNER_IDS, GUILD_ID, WARS_CHANNEL_ID, COMMON_RATING_CHANNEL_ID
+from config.mod.mod_config import COGS_DIR
+from config.bot.bot_config import PREFIX, TOKEN, OWNER_IDS, GUILD_ID, WARS_CHANNEL_ID, COMMON_RATING_CHANNEL_ID
 from discord.ext.commands import Context, CommandNotFound, CommandOnCooldown, MissingPermissions, BadArgument
 from discord.ext.commands import MissingRequiredArgument, PrivateMessageOnly, NoPrivateMessage
 from discord.ext.commands import Bot as BaseBot

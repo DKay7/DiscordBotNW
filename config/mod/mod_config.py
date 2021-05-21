@@ -6,4 +6,4 @@ WARN_EMBEDS_DIR = r"data/embeds/warn_embeds.json"
 MUTE_EMBEDS_DIR = r"data/embeds/mute_embeds.json"
 UNMUTE_EMBEDS_DIR = r"data/embeds/unmute_embeds.json"
 NUM_WARNS_TO_TEMP_BAN = 3
-TIME_TO_TEMP_BAN = "1m"
+TIME_TO_TEMP_BAN = "24h"

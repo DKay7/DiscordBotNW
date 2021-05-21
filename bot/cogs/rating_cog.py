@@ -1,10 +1,13 @@
-from discord import ChannelType
+from discord import ChannelType, Member, File
 from discord.ext.commands import Cog, command
 from utils.db.db_rating_utils import add_voice_rating_trace, remove_voice_rating_trace, update_message_rating
-from config.rating_config import restricted_rating_channels, restricted_guilds
-from utils.rating_utils.checkers import check_level_and_get_role
+from config.rating.restricted import restricted_guilds, restricted_rating_channels
+from utils.rating.checkers import check_level_and_get_role
 from datetime import datetime
-from config.bot_config import PREFIX
+from config.bot.bot_config import PREFIX
+from utils.rating.progress_bar import draw_stat_image
+from io import BytesIO
+from typing import Optional
 
 
 class RatingCog(Cog):
@@ -45,8 +48,15 @@ class RatingCog(Cog):
                 await check_level_and_get_role(member, state_before.channel.guild)
 
     @command()
-    async def test(self, ctx):
-        await ctx.message.author.send('👋')
+    async def rating(self, ctx, user: Optional[Member]):
+        user = user or ctx.author
+        guild = ctx.guild
+
+        image = await draw_stat_image(user, guild)
+        with BytesIO() as image_binary:
+            image.save(image_binary, 'PNG')
+            image_binary.seek(0)
+            await ctx.send(file=File(fp=image_binary, filename=f'{guild}_{user}_rating.png'))
 
 
 def setup(bot):
