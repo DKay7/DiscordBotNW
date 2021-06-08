@@ -1,0 +1,8 @@
+from config.main.config import env
+
+PREFIX = '\\'
+TOKEN = env.str('TOKEN')
+OWNER_IDS = env.list('OWNER_IDS')
+GUILD_ID = env.int("GUILD_ID")
+WARS_CHANNEL_ID = 838043159409590343
+COMMON_RATING_CHANNEL_ID = 838043054698921985
