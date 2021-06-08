@@ -43,3 +43,23 @@ CREATE TABLE IF NOT EXISTS rating (
  Level integer,
  PRIMARY KEY(UserID, GuildID)
 );
+
+CREATE TABLE IF NOT EXISTS marriage (
+ UserID integer,
+ TargetID integer,
+ PRIMARY KEY(UserID, TargetID)
+);
+
+CREATE TABLE IF NOT EXISTS marriage_asks (
+ UserID integer,
+ TargetID integer,
+ AskerMessageID integer,
+ PRIMARY KEY(UserID, TargetID)
+);
+
+CREATE TABLE IF NOT EXISTS sex_asks (
+ UserID integer,
+ TargetID integer,
+ AskerMessageID integer,
+ PRIMARY KEY(UserID, TargetID)
+);

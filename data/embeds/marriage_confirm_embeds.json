@@ -1,0 +1,16 @@
+{
+
+    "color": 5049613,
+    "footer": {
+        "text": "Поздравляем!"
+    },
+    "image": {
+        "url": "https://lifeo.ru/wp-content/uploads/gif-anime-kisses-14.gif"
+    },
+    "thumbnail": {
+        "url": "https://i.gifer.com/4QYc.gif"
+    },
+    "type": "rich",
+    "title": "",
+    "description": "Поздравляем, пользователь {target} согласился вступить в брак с пользователем {username}"
+}

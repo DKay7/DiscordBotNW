@@ -119,7 +119,7 @@ class Mod(Cog):
     async def ban_user(self, ctx: Context, target: Member, *,  reason: Optional[str] = "No reason provided"):
 
         if not target:
-            raise MissingRequiredArgument("Цель")
+            raise MissingRequiredArgument(target)
 
         if ctx.guild.me.top_role.position > target.top_role.position \
                 and not target.guild_permissions.administrator:
@@ -138,7 +138,7 @@ class Mod(Cog):
     async def unban_user(self, ctx: Context, target: BannedUser(), *,
                          reason: Optional[str] = "No reason provided"):
         if not target:
-            raise MissingRequiredArgument("Цель")
+            raise MissingRequiredArgument(target)
 
         await ctx.guild.unban(target, reason=reason)
         delete_temp_ban_entry(target.id, ctx.guild.id)
@@ -152,7 +152,7 @@ class Mod(Cog):
     async def kick_user(self, ctx: Context, target: Member, *, reason: Optional[str] = "No reason provided"):
 
         if not target:
-            raise MissingRequiredArgument("Цель")
+            raise MissingRequiredArgument(target)
 
         if ctx.guild.me.top_role.position > target.top_role.position \
                 and not target.guild_permissions.administrator:
