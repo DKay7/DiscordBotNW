@@ -1,0 +1,12 @@
+{
+
+    "color": 5049613,
+
+    "thumbnail": {
+        "url": "https://i.gifer.com/4RYc.gif"
+    },
+
+    "type": "rich",
+    "title": "Сумма на клановом счету пользователя",
+    "description": "На счету пользователя {user} в клане `{clan}` находится ровно `{money}` кредитов"
+}

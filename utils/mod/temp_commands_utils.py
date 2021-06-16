@@ -1,7 +1,7 @@
-from utils.db.db_mod_utils import get_all_temp_role_entries, get_all_temp_ban_entries, get_all_temp_mute_entries
-from utils.db.db_mod_utils import delete_temp_role_entry, delete_temp_ban_entry, delete_temp_mute_entry
-from utils.db.db_mod_utils import add_temp_role_entry, add_temp_ban_entry, add_temp_mute_entry
-from utils.db.db_mod_utils import get_temp_role_entry, get_temp_ban_entry, get_temp_mute_entry
+from utils.db.moderation import get_all_temp_role_entries, get_all_temp_ban_entries, get_all_temp_mute_entries
+from utils.db.moderation import delete_temp_role_entry, delete_temp_ban_entry, delete_temp_mute_entry
+from utils.db.moderation import add_temp_role_entry, add_temp_ban_entry, add_temp_mute_entry
+from utils.db.moderation import get_temp_role_entry, get_temp_ban_entry, get_temp_mute_entry
 from utils.mod.mod_embeds import send_unmute_embeds
 from discord import Member, Object, NotFound, User, Role
 from datetime import datetime, timedelta
@@ -16,7 +16,7 @@ async def temp_ban_user(target: Member, end_time: timedelta, reason: str):
 async def temp_mute_user(target: Member, end_time: timedelta, mute_type):
     add_temp_mute_entry(target.id, end_time, mute_type, target.guild.id)
 
-    if mute_type == "text" or mute_type == "all":
+    if mute_type in ["text", "all"]:
         for channel in target.guild.text_channels:
             perms = channel.overwrites_for(target)
             perms.send_messages = False

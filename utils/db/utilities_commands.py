@@ -1,5 +1,5 @@
-from .db_build_utils import with_commit
-from .db_connection import cursor
+from utils.db.db_build import with_commit
+from utils.db.db_connection import cursor
 
 
 @with_commit
@@ -44,12 +44,12 @@ def commit_marriage(user_id, target_id):
 @with_commit
 def delete_marriage_response(user_id, target_id):
     cursor.execute("DELETE FROM marriage_asks "
-                   "WHERE (UserId=? and TargetId=?) ",
+                   "WHERE (UserID=? and TargetID=?) ",
                    (user_id, target_id))
 
 
 def find_sex_response(target_id, message_id):
-    user_id = cursor.execute("SELECT UserId FROM sex_asks "
+    user_id = cursor.execute("SELECT UserID FROM sex_asks "
                              "WHERE (TargetId=? AND AskerMessageID=?)",
                              (target_id, message_id)).fetchone()
 
@@ -60,15 +60,15 @@ def find_sex_response(target_id, message_id):
 @with_commit
 def delete_sex_response(user_id, target_id):
     cursor.execute("DELETE FROM sex_asks "
-                   "WHERE (UserId=? and TargetId=?) ",
+                   "WHERE (UserID=? and TargetID=?) ",
                    (user_id, target_id))
 
 
 @with_commit
 def add_sex_response(user_id, target_id, message_id):
     cursor.execute("INSERT INTO sex_asks "
-                   "(UserId, TargetId, AskerMessageID) "
+                   "(UserID, TargetID, AskerMessageID) "
                    "VALUES(?, ?, ?) "
-                   "ON CONFLICT(UserId, TargetId) DO UPDATE "
+                   "ON CONFLICT(UserID, TargetID) DO UPDATE "
                    "SET AskerMessageID=?",
                    (user_id, target_id, message_id, message_id))

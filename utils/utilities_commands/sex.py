@@ -1,4 +1,4 @@
-from utils.db.db_utilities_commands import find_sex_response,  delete_sex_response
+from utils.db.utilities_commands import find_sex_response,  delete_sex_response
 from utils.common.utils import load_file
 from config.utilities_commands.sex import SEX_REACTIONS_PATH
 from utils.utilities_commands.embeds import get_sex_embeds

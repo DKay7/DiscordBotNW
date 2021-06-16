@@ -2,8 +2,10 @@ from config.mod.mod_config import COGS_DIR
 from config.bot.bot_config import PREFIX, TOKEN, OWNER_IDS, GUILD_ID, WARS_CHANNEL_ID, COMMON_RATING_CHANNEL_ID
 from discord.ext.commands import Context, CommandNotFound, CommandOnCooldown, MissingPermissions, BadArgument
 from discord.ext.commands import MissingRequiredArgument, PrivateMessageOnly, NoPrivateMessage
+from config.bot.bot_config import COMMON_TEXT_CHANNEL_ID
 from discord.ext.commands import Bot as BaseBot
 from os.path import splitext, basename
+from datetime import timedelta
 from discord import Intents
 from glob import glob
 
@@ -16,6 +18,7 @@ class Bot(BaseBot):
         self.guild = None
         self.wars_channel = None
         self.common_rating_channel = None
+        self.common_text_channel = None
         self.ready = False
         intents = Intents().all()
         super(Bot, self).__init__(command_prefix=self.PREFIX, owner_ids=self.OWNER_IDS, intents=intents)
@@ -30,6 +33,7 @@ class Bot(BaseBot):
             self.guild = self.get_guild(GUILD_ID)
             self.wars_channel = self.guild.get_channel(WARS_CHANNEL_ID)
             self.common_rating_channel = self.guild.get_channel(COMMON_RATING_CHANNEL_ID)
+            self.common_text_channel = self.guild.get_channel(COMMON_TEXT_CHANNEL_ID)
 
         else:
             print(f'RE-Logged in as {self.user}')
@@ -53,7 +57,9 @@ class Bot(BaseBot):
             await ctx.send(f'Команда может быть использована только на сервере с ботом')
 
         elif isinstance(exc, CommandOnCooldown):
-            await ctx.send(f'Команда на колдауне. Попробуйте снова через {exc.retry_after:,.2f} сек.')
+            delta_time = timedelta(seconds=exc.retry_after)
+            delta_time_str = str(delta_time).split(".")[0]
+            await ctx.send(f'Команда на колдауне. Попробуйте снова через {delta_time_str}')
 
         elif isinstance(exc, MissingPermissions):
             await ctx.send(f'У вас нет необходимых разрешений для запуска этой команды')

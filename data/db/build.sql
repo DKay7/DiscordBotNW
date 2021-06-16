@@ -36,12 +36,27 @@ CREATE TABLE IF NOT EXISTS voice_rating_trace (
  PRIMARY KEY(UserID, GuildID)
 );
 
+CREATE TABLE IF NOT EXISTS clan_voice_rating_trace (
+ UserID integer,
+ GroupChannelID integer,
+ StartTime timestamp,
+ PRIMARY KEY(UserID, GroupChannelID)
+);
+
 CREATE TABLE IF NOT EXISTS rating (
  UserID integer,
  GuildID integer,
  Rating float,
  Level integer,
  PRIMARY KEY(UserID, GuildID)
+);
+
+CREATE TABLE IF NOT EXISTS clan_rating (
+ UserID integer,
+ GroupChannelID integer,
+ Rating float,
+ Level integer,
+ PRIMARY KEY(UserID, GroupChannelID)
 );
 
 CREATE TABLE IF NOT EXISTS marriage (
@@ -61,5 +76,46 @@ CREATE TABLE IF NOT EXISTS sex_asks (
  UserID integer,
  TargetID integer,
  AskerMessageID integer,
+ PRIMARY KEY(UserID, TargetID)
+);
+
+CREATE TABLE IF NOT EXISTS clans (
+ ClanName text,
+ GroupChannelID integer,
+ WinPoints integer DEFAULT 0,
+ LeaderRoleId integer,
+ DepRoleId integer,
+ MemberRoleId integer,
+ PRIMARY KEY(ClanName, GroupChannelID)
+);
+
+CREATE TABLE IF NOT EXISTS clan_asks (
+ TargetID integer,
+ GuildID integer,
+ AskerMessageID integer,
+ ChannelID integer,
+ ClanName text,
+ Type text,
+ PRIMARY KEY(TargetID, GuildID, ClanName, Type)
+);
+
+CREATE TABLE IF NOT EXISTS clan_economy (
+ UserID integer,
+ GroupChannelID integer,
+ Money Integer,
+ PRIMARY KEY(UserID, GroupChannelID)
+);
+
+CREATE TABLE IF NOT EXISTS clan_shops (
+ GroupChannelID integer,
+ RolesAndCosts text,
+ PRIMARY KEY(GroupChannelID)
+);
+
+CREATE TABLE IF NOT EXISTS duel_asks (
+ UserID integer,
+ TargetID integer,
+ AskerMessageID integer,
+ Bet integer,
  PRIMARY KEY(UserID, TargetID)
 );
