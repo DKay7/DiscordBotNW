@@ -5,7 +5,7 @@ from config.clan.reactions_path import CLAN_MEMBER_OFFER_REACTIONS_PATH, DUEL_AS
 from config.clan.roles import CLAN_MEMBER_ROLE, CLAN_DEP_ROLE
 from utils.db.clans import get_clan_name_from_response, delete_clan_response, get_channel_id_from_response
 from utils.db.clans import add_duel_response, delete_duel_response, find_duel_response
-from utils.db.clan_economy import get_money, withdraw_money
+from utils.db.clan_economy import get_clan_money, withdraw_clan_money
 from discord.ext.commands import BadArgument
 from discord.utils import get
 

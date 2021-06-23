@@ -20,8 +20,6 @@ from typing import Optional
 class Mod(Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.text_mute_role = None
-        self.voice_mute_role = None
 
     @guild_only()
     @command(name="temp_ban")

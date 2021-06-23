@@ -1,4 +1,4 @@
-from utils.db.clan_economy import get_money, withdraw_money, add_money
+from utils.db.clan_economy import get_clan_money, withdraw_clan_money, add_clan_money
 from random import choice
 from utils.clan.embeds import get_duel_result_embed, get_duel_deny_embed
 from utils.db.clans import delete_duel_response
@@ -6,16 +6,16 @@ from utils.db.clans import delete_duel_response
 
 async def proceed_duel(user, opponent, bet, channel):
     clan = channel.category
-    money_opponent = get_money(opponent.id, clan.id)
+    money_opponent = get_clan_money(opponent.id, clan.id)
 
     if money_opponent - bet < 0:
         await channel.send(f"У вас недостаточно денег, чтобы принять ставку соперника")
         return
 
-    withdraw_money(opponent.id, clan.id, bet)
+    withdraw_clan_money(opponent.id, clan.id, bet)
 
     winner = choice([user, opponent])
-    add_money(winner.id, clan.id, bet*2)
+    add_clan_money(winner.id, clan.id, bet * 2)
 
     result_embed = get_duel_result_embed(user, opponent, winner)
 
@@ -24,7 +24,7 @@ async def proceed_duel(user, opponent, bet, channel):
 
 async def deny_duel(user, opponent, bet, channel):
     delete_duel_response(user.id, opponent.id)
-    add_money(user.id, channel.category.id, bet)
+    add_clan_money(user.id, channel.category.id, bet)
 
     deny_embed = get_duel_deny_embed(user, opponent)
 

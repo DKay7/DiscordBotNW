@@ -6,7 +6,7 @@ from utils.clan.embeds import get_offer_embeds_and_reactions, get_top10_clans_em
 from utils.clan.checkers import check_leader
 from utils.clan.creators import create_clan_roles, create_clan_channels
 from utils.db.clans import add_clan_response, write_win, add_duel_response
-from utils.db.clan_economy import get_money, withdraw_money
+from utils.db.clan_economy import get_clan_money, withdraw_clan_money
 from utils.clan.reaction_listeners import clan_leader_offer_reaction_listener, clan_dep_leader_offer_reaction_listener, \
     duel_reactions_listener
 from utils.clan.reaction_listeners import clan_member_offer_reaction_listener
@@ -131,14 +131,14 @@ class ClanCog(Cog):
         if check_user_in_clan(ctx.author, ctx.channel.category) and \
            check_user_in_clan(opponent, ctx.channel.category):
 
-            asker_money = get_money(ctx.author.id, ctx.channel.category.id)
+            asker_money = get_clan_money(ctx.author.id, ctx.channel.category.id)
 
             if asker_money - bet < 0:
                 await ctx.send(f"У вас недостаточно денег, чтобы сделать такую ставку",
                                delete_after=10)
                 return
 
-            withdraw_money(ctx.author.id, ctx.channel.category.id, bet)
+            withdraw_clan_money(ctx.author.id, ctx.channel.category.id, bet)
             duel_embeds, reactions = get_duel_ask_embeds(ctx.author, opponent)
 
             message = await ctx.send(embed=duel_embeds)

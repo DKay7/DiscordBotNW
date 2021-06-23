@@ -108,8 +108,9 @@ CREATE TABLE IF NOT EXISTS clan_economy (
 
 CREATE TABLE IF NOT EXISTS clan_shops (
  GroupChannelID integer,
- RolesAndCosts text,
- PRIMARY KEY(GroupChannelID)
+ RoleID integer,
+ Cost integer,
+ PRIMARY KEY(GroupChannelID, RoleID)
 );
 
 CREATE TABLE IF NOT EXISTS duel_asks (
@@ -119,3 +120,31 @@ CREATE TABLE IF NOT EXISTS duel_asks (
  Bet integer,
  PRIMARY KEY(UserID, TargetID)
 );
+
+CREATE TABLE IF NOT EXISTS economy (
+ UserID integer,
+ GuildID integer,
+ Money Integer,
+ PRIMARY KEY(UserID, GuildID)
+);
+
+CREATE TABLE IF NOT EXISTS shop (
+ GuildID integer,
+ RoleID integer,
+ Cost integer,
+ PRIMARY KEY(RoleID, GuildID)
+);
+
+CREATE TABLE IF NOT EXISTS money_symbols (
+ GuildID integer,
+ Symbol integer DEFAULT "Cr",
+ PRIMARY KEY(GuildID)
+);
+
+CREATE TABLE IF NOT EXISTS deposit (
+ UserID integer,
+ GuildID integer,
+ DepositMoney Integer,
+ PRIMARY KEY(UserID, GuildID)
+);
+

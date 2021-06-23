@@ -1,3 +1,4 @@
+from config.economy.money_symbol import DEFAULT_MONEY_SYMBOL
 from config.mod.mod_config import COGS_DIR
 from config.bot.bot_config import PREFIX, TOKEN, OWNER_IDS, GUILD_ID, WARS_CHANNEL_ID, COMMON_RATING_CHANNEL_ID
 from discord.ext.commands import Context, CommandNotFound, CommandOnCooldown, MissingPermissions, BadArgument
@@ -8,6 +9,8 @@ from os.path import splitext, basename
 from datetime import timedelta
 from discord import Intents
 from glob import glob
+
+from utils.db.economy import get_money_symbol, add_money_symbol
 
 
 class Bot(BaseBot):
@@ -20,6 +23,7 @@ class Bot(BaseBot):
         self.common_rating_channel = None
         self.common_text_channel = None
         self.ready = False
+        self.money_symbol = DEFAULT_MONEY_SYMBOL
         intents = Intents().all()
         super(Bot, self).__init__(command_prefix=self.PREFIX, owner_ids=self.OWNER_IDS, intents=intents)
 
@@ -34,6 +38,12 @@ class Bot(BaseBot):
             self.wars_channel = self.guild.get_channel(WARS_CHANNEL_ID)
             self.common_rating_channel = self.guild.get_channel(COMMON_RATING_CHANNEL_ID)
             self.common_text_channel = self.guild.get_channel(COMMON_TEXT_CHANNEL_ID)
+
+            self.money_symbol = get_money_symbol(self.guild.id)
+
+            if not self.money_symbol:
+                add_money_symbol(self.guild.id, DEFAULT_MONEY_SYMBOL)
+                self.money_symbol = DEFAULT_MONEY_SYMBOL
 
         else:
             print(f'RE-Logged in as {self.user}')
@@ -74,7 +84,7 @@ class Bot(BaseBot):
             raise exc
 
     async def on_message(self, message):
-        if not message.author == self.user:
+        if not message.author == self.user and self.ready:
             await self.process_commands(message)
 
     def setup(self):

@@ -1,0 +1,12 @@
+{
+
+    "color": 5049613,
+
+    "thumbnail": {
+        "url": "https://i.gifer.com/4rYc.gif"
+    },
+
+    "type": "rich",
+    "title": "Отчет о переводе денежных средств",
+    "description": "Пользователь {user} перевел пользователю {target} {money}{symbol}"
+}
