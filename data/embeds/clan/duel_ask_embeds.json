@@ -1,0 +1,12 @@
+{
+
+    "color": 5049613,
+
+    "thumbnail": {
+        "url": "https://i.gifer.com/4Rzc.gif"
+    },
+
+    "type": "rich",
+    "title": "Вызов на дуэль",
+    "description": "Пользователь {user} вызывает пользователя {opponent} на дуэль! Осмелишься ли ты принять вызов?"
+}

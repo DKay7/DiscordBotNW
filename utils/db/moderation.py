@@ -1,7 +1,7 @@
 import sqlite3
-from ..mod.add_reason_sql import append_warn_reason, add_warn_reason, remove_warn_reason
-from .db_build_utils import with_commit
-from .db_connection import cursor, conn
+from utils.mod.add_reason_sql import append_warn_reason, add_warn_reason, remove_warn_reason
+from utils.db.db_build import with_commit
+from utils.db.db_connection import cursor, conn
 
 
 conn.create_function("APPEND_REASON", 2, append_warn_reason)

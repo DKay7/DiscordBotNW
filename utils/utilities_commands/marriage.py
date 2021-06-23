@@ -1,4 +1,4 @@
-from utils.db.db_utilities_commands import find_marriage_response, commit_marriage, delete_marriage_response
+from utils.db.utilities_commands import find_marriage_response, commit_marriage, delete_marriage_response
 from utils.common.utils import load_file
 from config.utilities_commands.marriage import MARRIAGE_REACTIONS_PATH
 from utils.utilities_commands.embeds import get_marriages_embeds

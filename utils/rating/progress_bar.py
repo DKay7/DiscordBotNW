@@ -6,10 +6,11 @@ from config.rating.rating_stat_image import BACKGROUND_PB, FOREGROUND_PB, AVATAR
 from config.rating.points_counter import RATING_POINTS_PER_ONE_MESSAGE, RATING_POINTS_PER_SEC_VOICE
 from config.rating.rating_stat_image import STAT_X_R, USER_NAME_X_R, IMAGE_STAT_FONT
 from config.rating.rating_to_level import get_rating_for_next_level
-from utils.db.db_rating_utils import get_level_and_rating, get_position
+from utils.db.rating.rating import get_level_and_rating, get_position
+from utils.db.rating.clan_rating import get_clan_level_and_rating, get_clan_position
 from PIL import Image, ImageFont, ImageDraw
 from math import log10, ceil
-from discord import Member, Guild
+from discord import Member, Guild, CategoryChannel
 from io import BytesIO
 
 
@@ -107,9 +108,20 @@ def get_stat_for_user(user: Member, guild: Guild):
     return rating, total_rating, level, position
 
 
-# TODO write util to get current, total and level by user
-async def draw_stat_image(user: Member, guild: Guild):
-    current_rating, total_rating, level, position = get_stat_for_user(user, guild)
+def get_clan_stat_for_user(user: Member, clan: CategoryChannel):
+    rating, level = get_clan_level_and_rating(user.id, clan.id)
+    total_rating = get_rating_for_next_level(level + 1)
+    position = get_clan_position(user.id, clan.id)
+
+    n_digits = ceil(max(abs(log10(RATING_POINTS_PER_ONE_MESSAGE)),
+                        abs(log10(RATING_POINTS_PER_SEC_VOICE))))
+
+    rating = round(rating, n_digits)
+    return rating, total_rating, level, position
+
+
+async def draw_stat_image(user: Member, stats: tuple):
+    current_rating, total_rating, level, position = stats
 
     backdrop = Image.open(RATING_STAT_BACKGROUND)
     backdrop.resize((IMAGE_WIDTH, IMAGE_HEIGHT))

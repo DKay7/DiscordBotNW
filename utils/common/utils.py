@@ -6,3 +6,5 @@ def load_file(filename):
         result_dict = loads(file.read())
 
     return result_dict
+
+

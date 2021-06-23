@@ -1,9 +1,11 @@
+from discord.ext.commands.core import guild_only
+
 from utils.mod.temp_commands_utils import temp_ban_user, temp_mute_user, temp_role_user
 from utils.mod.temp_commands_utils import wait_and_unban, wait_and_unmute
 from utils.mod.temp_commands_utils import reload_temp_mutes_waiting, reload_temp_role_waiting
 from utils.mod.temp_commands_utils import wait_and_remove_role, reload_temp_bans_waiting
-from utils.db.db_mod_utils import update_warn_entry, get_warn_entry, unwarn_entry
-from utils.db.db_mod_utils import delete_temp_mute_entry, delete_temp_ban_entry
+from utils.db.moderation import update_warn_entry, get_warn_entry, unwarn_entry
+from utils.db.moderation import delete_temp_mute_entry, delete_temp_ban_entry
 from discord.ext.commands import Cog, Context, command, bot_has_permissions, has_permissions, MissingRequiredArgument
 from utils.mod.mod_embeds import send_temp_ban_embeds, send_ban_embeds,  send_kick_embeds
 from config.mod.mod_config import NUM_WARNS_TO_TEMP_BAN, TIME_TO_TEMP_BAN
@@ -18,9 +20,8 @@ from typing import Optional
 class Mod(Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.text_mute_role = None
-        self.voice_mute_role = None
 
+    @guild_only()
     @command(name="temp_ban")
     @bot_has_permissions(ban_members=True)
     @has_permissions(ban_members=True)
@@ -50,6 +51,7 @@ class Mod(Cog):
         # TODO remove next line
         await ctx.send(f"Unbanned {target.mention}", delete_after=10)
 
+    @guild_only()
     @bot_has_permissions(manage_roles=True)
     @has_permissions(manage_roles=True)
     @command(name="mute")
@@ -78,6 +80,7 @@ class Mod(Cog):
 
         await wait_and_unmute(bot=self.bot, target=target)
 
+    @guild_only()
     @bot_has_permissions(manage_roles=True)
     @has_permissions(manage_roles=True)
     @command(name="unmute")
@@ -113,6 +116,7 @@ class Mod(Cog):
             else:
                 raise MissingPermissions("Нельзя анмутить участника с более высокой ролью")
 
+    @guild_only()
     @command(name="ban")
     @bot_has_permissions(ban_members=True)
     @has_permissions(ban_members=True)
@@ -132,6 +136,7 @@ class Mod(Cog):
         else:
             raise MissingPermissions("Нельзя банить участника с более высокой ролью")
 
+    @guild_only()
     @command(name="unban")
     @bot_has_permissions(ban_members=True)
     @has_permissions(ban_members=True)
@@ -146,6 +151,7 @@ class Mod(Cog):
         # TODO remove next line
         await ctx.send(f"Unbanned {target.mention}", delete_after=10)
 
+    @guild_only()
     @command(name="kick")
     @bot_has_permissions(kick_members=True)
     @has_permissions(kick_members=True)
@@ -167,6 +173,7 @@ class Mod(Cog):
         else:
             raise MissingPermissions("Нельзя кикать участника с более высокой ролью")
 
+    @guild_only()
     @command(name="clear", aliases=['cls'])
     @bot_has_permissions(manage_messages=True)
     @has_permissions(manage_messages=True)
@@ -179,6 +186,7 @@ class Mod(Cog):
             await ctx.message.delete()
             await ctx.channel.purge(limit=amount)
 
+    @guild_only()
     @bot_has_permissions(manage_roles=True, ban_members=True)
     @has_permissions(manage_roles=True, ban_members=True)
     @command(name="warn")
@@ -200,6 +208,7 @@ class Mod(Cog):
                                             f"предупреждений и были забанены."
                                             f"Общее количество предупреждений: {num_warns}")
 
+    @guild_only()
     @bot_has_permissions(manage_roles=True, ban_members=True)
     @has_permissions(manage_roles=True, ban_members=True)
     @command(name="unwarn")
@@ -212,6 +221,7 @@ class Mod(Cog):
         # TODO remove next line
         await ctx.send(f"UnWarned {target.mention}", delete_after=10)
 
+    @guild_only()
     @bot_has_permissions(manage_roles=True)
     @has_permissions(manage_roles=True)
     @command(name="temp_role")

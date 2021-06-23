@@ -1,11 +1,14 @@
 from discord import Member, Reaction
 from discord.ext.commands import Cog, command, Greedy, BadArgument, MissingRequiredArgument, Context
 from typing import Optional
+
+from discord.ext.commands.core import guild_only
+
 from config.utilities_commands.commands_data import ACTIONS
-from utils.utilities_commands.embeds import get_avatar_embeds, get_utilities_embeds, get_marriages_embeds,\
-    get_sex_embeds, get_user_info_embeds, get_server_info_embeds
+from utils.utilities_commands.embeds import get_avatar_embeds, get_utilities_embeds, get_marriages_embeds
+from utils.utilities_commands.embeds import get_sex_embeds, get_user_info_embeds, get_server_info_embeds
 from utils.utilities_commands.loaders import load_gifs_file
-from utils.db.db_utilities_commands import add_marriage_response, has_prev_marriage, add_sex_response
+from utils.db.utilities_commands import add_marriage_response, has_prev_marriage, add_sex_response
 from random import choice
 from config.utilities_commands.marriage import MARRIAGE_REACTIONS_PATH
 from config.utilities_commands.sex import SEX_REACTIONS_PATH
@@ -18,12 +21,14 @@ class UtilsCog(Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    @guild_only()
     @command(name="get_avatar")
     async def get_avatar(self, ctx: Context, user: Optional[Member]):
         user = user or ctx.author
         avatar_embed = get_avatar_embeds(user)
         await ctx.send(embed=avatar_embed)
 
+    @guild_only()
     @command(name="utilities", aliases=list(ACTIONS.keys()))
     async def utilities(self, ctx: Context, users: Greedy[Member]):
         users.append(ctx.author)
@@ -43,6 +48,7 @@ class UtilsCog(Cog):
         avatar_embed = get_utilities_embeds(result_message, gif_link)
         await ctx.send(embed=avatar_embed)
 
+    @guild_only()
     @command(name="marriage")
     async def ask_marriage(self, ctx: Context, user: Member):
         if not user:
@@ -61,6 +67,7 @@ class UtilsCog(Cog):
         await message.add_reaction(reactions["yes"])
         await message.add_reaction(reactions["no"])
 
+    @guild_only()
     @command(name="sex")
     async def ask_sex(self, ctx: Context, user: Member):
         if not user:
@@ -75,12 +82,14 @@ class UtilsCog(Cog):
         await message.add_reaction(reactions["yes"])
         await message.add_reaction(reactions["no"])
 
+    @guild_only()
     @command(name="userinfo")
     async def get_userinfo(self, ctx: Context, user: Optional[Member]):
         user = user or ctx.author
-        embed = get_user_info_embeds(user)
+        embed = get_user_info_embeds(user, ctx.guild)
         await ctx.send(embed=embed)
 
+    @guild_only()
     @command(name="serverinfo")
     async def get_serverinfo(self, ctx: Context):
         embed = get_server_info_embeds(ctx.guild)

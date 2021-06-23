@@ -1,5 +1,5 @@
-from .db_build_utils import with_commit
-from .db_connection import cursor, conn
+from utils.db.db_build import with_commit
+from utils.db.db_connection import cursor, conn
 from config.rating.points_counter import RATING_POINTS_PER_SEC_VOICE, RATING_POINTS_PER_ONE_MESSAGE
 from config.rating.rating_to_level import get_level_by_rating
 

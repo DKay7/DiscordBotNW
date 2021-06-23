@@ -1,12 +1,13 @@
 from config.db.db_config import BUILD_PATH
-from .db_connection import conn, cursor
+from utils.db.db_connection import cursor, conn
 from os.path import isfile
 
 
 def with_commit(func):
     def inner(*args, **kwargs):
-        func(*args, **kwargs)
+        result = func(*args, **kwargs)
         commit()
+        return result
 
     return inner
 

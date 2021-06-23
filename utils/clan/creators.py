@@ -1,8 +1,10 @@
-from config.clan.clan_config import CLAN_LEADER_ROLE, CLAN_DEP_ROLE, CLAN_MEMBER_ROLE, user_types, channels
-from config.clan.clan_config import CLAN_CHANNELS_PERMS_ROLES_PATTERN
+from config.clan.patterns import user_types, channels
+from config.clan.roles import CLAN_LEADER_ROLE, CLAN_MEMBER_ROLE, CLAN_DEP_ROLE
+from config.clan.patterns import CLAN_CHANNELS_PERMS_ROLES_PATTERN
 from utils.clan.getters_and_loaders import get_colour
 from utils.common.utils import load_file
 from discord import Guild, Permissions, PermissionOverwrite
+from utils.db.clans import add_clan_to_db
 
 
 async def create_clan_roles(guild: Guild, clan_name: str):
@@ -39,6 +41,8 @@ async def create_clan_channels(guild: Guild, clan_roles: tuple, clan_name: str):
     assert len(clan_roles) == len(user_types)
     perms_overwrites = {guild.default_role: PermissionOverwrite(read_messages=False)}
     clan_category = await guild.create_category(f"Clan {clan_name}", overwrites=perms_overwrites)
+
+    add_clan_to_db(clan_name=clan_name, group_channel_id=clan_category.id, clan_roles=clan_roles)
 
     for channel_key, channel in channels.items():
         for index, user_type in enumerate(user_types.values()):

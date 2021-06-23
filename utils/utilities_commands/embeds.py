@@ -1,13 +1,13 @@
-from json import loads
+from utils.common.utils import load_file
 from discord import Embed
 from config.utilities_commands.embed_data import AVATAR_EMBED_PATH, UTILITIES_EMBEDS_PATH, \
     MARRIAGES_CONFIRM_EMBEDS_PATH, MARRIAGES_DENY_EMBEDS_PATH, MARRIAGES_ASK_EMBEDS_PATH, SEX_DENY_EMBEDS_PATH,\
     SEX_ASK_EMBEDS_PATH, SEX_CONFIRM_EMBEDS_PATH
+from utils.rating.progress_bar import get_stat_for_user
 
 
 def get_avatar_embeds(user):
-    with open(AVATAR_EMBED_PATH, "r") as file:
-        embed_dict = loads(file.read())
+    embed_dict = load_file(AVATAR_EMBED_PATH)
 
     avatar_urls = list()
     for avatar_format in ['webp', 'jpeg', 'jpg', 'png']:
@@ -22,8 +22,7 @@ def get_avatar_embeds(user):
 
 
 def get_utilities_embeds(description, gif_link):
-    with open(UTILITIES_EMBEDS_PATH, "r") as file:
-        embed_dict = loads(file.read())
+    embed_dict = load_file(UTILITIES_EMBEDS_PATH)
 
     avatar_embed = Embed().from_dict(embed_dict)
     avatar_embed.set_image(url=gif_link)
@@ -44,9 +43,7 @@ def get_marriages_embeds(user, target, type_=None):
     elif type_ == "deny":
         path = MARRIAGES_DENY_EMBEDS_PATH
 
-    with open(path, "r") as file:
-        embed_dict = loads(file.read())
-
+    embed_dict = load_file(path)
     marriage_embed = Embed().from_dict(embed_dict)
     marriage_embed.description = marriage_embed.description.format(username=user.mention,
                                                                    target=target.mention)
@@ -66,9 +63,7 @@ def get_sex_embeds(user, target, type_=None):
     elif type_ == "deny":
         path = SEX_DENY_EMBEDS_PATH
 
-    with open(path, "r") as file:
-        embed_dict = loads(file.read())
-
+    embed_dict = load_file(path)
     sex_embed = Embed().from_dict(embed_dict)
     sex_embed.description = sex_embed.description.format(username=user.mention,
                                                          target=target.mention)
@@ -76,17 +71,22 @@ def get_sex_embeds(user, target, type_=None):
     return sex_embed
 
 
-def get_user_info_embeds(user):
+def get_user_info_embeds(user, guild):
     embed = Embed(title=f"Информация о пользователе {user.display_name}",
                   color=user.color)
     embed.set_thumbnail(url=user.avatar_url)
 
-    fields = [("Id", f"`{user.id}`", True), ("Имя", f"`{user.name}`", True),
+    rating, total_rating, level, position = get_stat_for_user(user, guild)
+
+    fields = [("Id", f"`{user.id}`", False), ("Имя", f"`{user.name}`", True),
               ("Имя на сервере", f"`{user.display_name}`", True), ("Дискриминатор", f"`{user.discriminator}`", True),
+              ("Статус", str(user.status).title(), False),
+              ("Рейтинг", f"`#{position}`", True), ("Уровень", str(level), True),
+              ("Опыт", f"`{rating}/{total_rating}`", True),
               ("Присоединился к серверу", user.joined_at, True), ("Присоединился к Discord", user.created_at, True)]
 
     roles = [role.mention for role in user.roles]
-    fields.append((f"Роли ({len(roles)}):", " ".join(roles), True))
+    fields.append((f"Роли ({len(roles)}):", " ".join(roles), False))
 
     for name, value, inline in fields:
         embed.add_field(name=name, value=value, inline=inline)

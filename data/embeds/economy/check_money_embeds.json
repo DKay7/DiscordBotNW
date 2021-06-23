@@ -1,0 +1,12 @@
+{
+
+    "color": 5049613,
+
+    "thumbnail": {
+        "url": "https://i.gifer.com/4RYc.gif"
+    },
+
+    "type": "rich",
+    "title": "Деньги на счету пользователя",
+    "description": "У пользователя {user} есть:\n\n\nВ кошельке: `{money}` {symbol}\n\nНа банковском счету: `{deposit_money}` {symbol}"
+}

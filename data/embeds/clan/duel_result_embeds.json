@@ -1,0 +1,12 @@
+{
+
+    "color": 5049613,
+
+    "thumbnail": {
+        "url": "https://i.gifer.com/4RXc.gif"
+    },
+
+    "type": "rich",
+    "title": "Результат дуэли",
+    "description": "Дуэль между пользователем {user} и {opponent} закончилась победой {winner}. Поздравляем!"
+}
