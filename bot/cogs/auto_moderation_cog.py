@@ -3,14 +3,17 @@ from re import findall
 from typing import List
 from datetime import datetime
 from config.automoderation.common import MESSAGES_TO_WATCH, DELAY_SECONDS, SIMILARITY, URL_REGEXP, EMOJI_REGEXP
+from config.automoderation.restricted import automod_restricted_guilds, automod_restricted_channels, \
+    automod_restricted_users, automod_restricted_roles
+from config.automoderation.temp_ban_config import AUTO_TEMPBAN_REASON, TIME_TO_AUTO_TEMPBAN
 from utils.automoderation.swear_finder import cython_swear_finder
-from config.rating.restricted import restricted_guilds
 from discord.ext.commands import Cog
 from discord import Message, ChannelType
 from difflib import SequenceMatcher
 
 from utils.automoderation.embeds import get_emoji_warn_embeds, get_url_warn_embeds, get_swear_warn_embeds, \
     get_mention_warn_embeds, get_uppercase_warn_embeds, get_similarity_warn_embeds
+from utils.mod.warn_commands import warn_user_util
 
 
 class AutoMod(Cog):
@@ -107,56 +110,90 @@ class AutoMod(Cog):
     @Cog.listener()
     async def on_message(self, message):
 
-        # TODO remove next line
-        if message.channel.type is ChannelType.text and message.channel.guild not in restricted_guilds:
-            if not message.author.bot and not message.content.startswith(self.bot.command_prefix):
+        if message.channel.type is ChannelType.text \
+                and not any(map(lambda role: role.id in automod_restricted_roles, message.author.roles)) \
+                and message.channel.guild.id not in automod_restricted_guilds \
+                and message.channel.id not in automod_restricted_channels \
+                and message.author.id not in automod_restricted_users \
+                and not message.author.bot \
+                and not message.content.startswith(self.bot.command_prefix):
 
-                if messages_to_delete := await self._url_check(message):
-                    await self._delete_messages(messages_to_delete)
-                    embed = get_url_warn_embeds(message.author)
-                    await message.author.send(embed=embed)
-                    # TODO remove next line
-                    await message.channel.send("Здесь нельзя делиться ссылками",
-                                               delete_after=10)
+            if messages_to_delete := await self._url_check(message):
+                await self._delete_messages(messages_to_delete)
+                embed = get_url_warn_embeds(message.author)
+                await message.author.send(embed=embed)
 
-                elif await self._swear_check(message):
-                    await message.delete()
-                    embed = get_swear_warn_embeds(message.author)
-                    await message.author.send(embed=embed)
-                    # TODO remove next line
-                    await message.channel.send("Здесь нельзя использовать такую лексику",
-                                               delete_after=10)
+                await warn_user_util(message.author, AUTO_TEMPBAN_REASON,
+                                     self.bot, message.channel.guild,
+                                     message.channel, TIME_TO_AUTO_TEMPBAN)
 
-                elif messages_to_delete := await self._mentions_check(message):
-                    await self._delete_messages(messages_to_delete)
-                    embed = get_mention_warn_embeds(message.author)
-                    await message.author.send(embed=embed)
-                    # TODO remove next line
-                    await message.channel.send("Вы пишете слишком много сообщений c упоминаниями",
-                                               delete_after=10)
+                # TODO remove next line
+                await message.channel.send("Здесь нельзя делиться ссылками",
+                                           delete_after=10)
 
-                elif messages_to_delete := await self._uppercase_check(message):
-                    await self._delete_messages(messages_to_delete)
-                    embed = get_uppercase_warn_embeds(message.author)
-                    await message.author.send(embed=embed)
-                    # TODO remove next line
-                    await message.channel.send("Вы пишете слишком много сообщений в верхнем регистре",
-                                               delete_after=10)
-                elif messages_to_delete := await self._similarity_check(message):
-                    await self._delete_messages(messages_to_delete)
-                    embed = get_similarity_warn_embeds(message.author)
-                    await message.author.send(embed=embed)
-                    # TODO remove next line
-                    await message.channel.send("Вы пишете слишком много одинаковых сообщений",
-                                               delete_after=10)
+            elif await self._swear_check(message):
+                await message.delete()
+                embed = get_swear_warn_embeds(message.author)
+                await message.author.send(embed=embed)
 
-                elif messages_to_delete := await self._emoji_check(message):
-                    await self._delete_messages(messages_to_delete)
-                    embed = get_emoji_warn_embeds(message.author)
-                    await message.author.send(embed=embed)
-                    # TODO remove next line
-                    await message.channel.send("Вы пишете слишком много сообщений cо смайликами",
-                                               delete_after=10)
+                await warn_user_util(message.author, AUTO_TEMPBAN_REASON,
+                                     self.bot, message.channel.guild,
+                                     message.channel, TIME_TO_AUTO_TEMPBAN)
+
+                # TODO remove next line
+                await message.channel.send("Здесь нельзя использовать такую лексику",
+                                           delete_after=10)
+
+            elif messages_to_delete := await self._mentions_check(message):
+                await self._delete_messages(messages_to_delete)
+                embed = get_mention_warn_embeds(message.author)
+                await message.author.send(embed=embed)
+
+                await warn_user_util(message.author, AUTO_TEMPBAN_REASON,
+                                     self.bot, message.channel.guild,
+                                     message.channel, TIME_TO_AUTO_TEMPBAN)
+
+                # TODO remove next line
+                await message.channel.send("Вы пишете слишком много сообщений c упоминаниями",
+                                           delete_after=10)
+
+            elif messages_to_delete := await self._uppercase_check(message):
+                await self._delete_messages(messages_to_delete)
+                embed = get_uppercase_warn_embeds(message.author)
+                await message.author.send(embed=embed)
+
+                await warn_user_util(message.author, AUTO_TEMPBAN_REASON,
+                                     self.bot, message.channel.guild,
+                                     message.channel, TIME_TO_AUTO_TEMPBAN)
+
+                # TODO remove next line
+                await message.channel.send("Вы пишете слишком много сообщений в верхнем регистре",
+                                           delete_after=10)
+            elif messages_to_delete := await self._similarity_check(message):
+                await self._delete_messages(messages_to_delete)
+                embed = get_similarity_warn_embeds(message.author)
+                await message.author.send(embed=embed)
+
+                await warn_user_util(message.author, AUTO_TEMPBAN_REASON,
+                                     self.bot, message.channel.guild,
+                                     message.channel, TIME_TO_AUTO_TEMPBAN)
+
+                # TODO remove next line
+                await message.channel.send("Вы пишете слишком много одинаковых сообщений",
+                                           delete_after=10)
+
+            elif messages_to_delete := await self._emoji_check(message):
+                await self._delete_messages(messages_to_delete)
+                embed = get_emoji_warn_embeds(message.author)
+                await message.author.send(embed=embed)
+
+                await warn_user_util(message.author, AUTO_TEMPBAN_REASON,
+                                     self.bot, message.channel.guild,
+                                     message.channel, TIME_TO_AUTO_TEMPBAN)
+
+                # TODO remove next line
+                await message.channel.send("Вы пишете слишком много сообщений cо смайликами",
+                                           delete_after=10)
 
 
 def setup(bot):

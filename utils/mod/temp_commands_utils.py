@@ -1,8 +1,11 @@
+from discord.ext.commands import MissingPermissions
+
 from utils.db.moderation import get_all_temp_role_entries, get_all_temp_ban_entries, get_all_temp_mute_entries
 from utils.db.moderation import delete_temp_role_entry, delete_temp_ban_entry, delete_temp_mute_entry
 from utils.db.moderation import add_temp_role_entry, add_temp_ban_entry, add_temp_mute_entry
 from utils.db.moderation import get_temp_role_entry, get_temp_ban_entry, get_temp_mute_entry
-from utils.mod.mod_embeds import send_unmute_embeds
+from utils.mod.data_converters import TimeConverter
+from utils.mod.mod_embeds import send_unmute_embeds, send_temp_ban_embeds
 from discord import Member, Object, NotFound, User, Role
 from datetime import datetime, timedelta
 from asyncio import sleep
@@ -65,6 +68,30 @@ async def wait_and_unban(bot, target: Member = None, entry: list = None):
             raise
         finally:
             delete_temp_ban_entry(target.id, guild.id)
+
+
+async def temp_ban_and_unban(target, reason, bot, guild, channel, time_to_temp_ban, convert_time=True):
+    if guild.me.top_role.position > target.top_role.position \
+            and not target.guild_permissions.administrator:
+
+        link = await channel.create_invite(max_uses=1, unique=True)
+
+        if convert_time:
+            time_to_temp_ban = await TimeConverter().convert(None, time_to_temp_ban)
+
+        await send_temp_ban_embeds(target, time_to_temp_ban.__str__(), link, reason)
+        await temp_ban_user(target, time_to_temp_ban.get_end_time(), reason)
+
+        # TODO remove next line
+        await channel.send(f"Banned {target.mention}", delete_after=10)
+
+    else:
+        raise MissingPermissions("Нельзя банить участника с более высокой ролью")
+
+    await wait_and_unban(bot=bot, target=target)
+
+    # TODO remove next line
+    await channel.send(f"Unbanned {target.mention}", delete_after=10)
 
 
 async def wait_and_unmute(bot, target: Member = None, entry: list = None):

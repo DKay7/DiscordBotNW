@@ -164,7 +164,7 @@ class EconomyCog(Cog):
             await ctx.send("Недостаточно средств на счету", delete_after=10)
 
     @command(name="transaction")
-    async def slot_machine(self, ctx: Context, target: Member, amount: int):
+    async def proceed_transaction(self, ctx: Context, target: Member, amount: int):
         if get_money(ctx.author.id, ctx.guild.id) - amount >= 0:
             withdraw_money(ctx.author.id, ctx.guild.id, amount)
             add_money(target.id, ctx.guild.id, amount)
