@@ -1,20 +1,20 @@
 from discord.ext.commands.core import guild_only
 
-from utils.mod.temp_commands_utils import temp_ban_user, temp_mute_user, temp_role_user
-from utils.mod.temp_commands_utils import wait_and_unban, wait_and_unmute
+from utils.mod.temp_commands_utils import temp_mute_user, temp_role_user, temp_ban_and_unban
+from utils.mod.temp_commands_utils import wait_and_unmute
 from utils.mod.temp_commands_utils import reload_temp_mutes_waiting, reload_temp_role_waiting
 from utils.mod.temp_commands_utils import wait_and_remove_role, reload_temp_bans_waiting
-from utils.db.moderation import update_warn_entry, get_warn_entry, unwarn_entry
 from utils.db.moderation import delete_temp_mute_entry, delete_temp_ban_entry
 from discord.ext.commands import Cog, Context, command, bot_has_permissions, has_permissions, MissingRequiredArgument
-from utils.mod.mod_embeds import send_temp_ban_embeds, send_ban_embeds,  send_kick_embeds
-from config.mod.mod_config import NUM_WARNS_TO_TEMP_BAN, TIME_TO_TEMP_BAN
+from utils.mod.mod_embeds import send_ban_embeds, send_kick_embeds
 from utils.mod.data_converters import BannedUser, TimeConverter
 from utils.mod.mod_embeds import send_mute_embeds, send_warn_embeds
 from discord.ext.commands import BadArgument, MissingPermissions
 from utils.mod.mod_embeds import send_unmute_embeds
 from discord import Member, Role
 from typing import Optional
+
+from utils.mod.warn_commands import warn_user_util, unwarn_user_util
 
 
 class Mod(Cog):
@@ -34,22 +34,7 @@ class Mod(Cog):
         if not time:
             raise MissingRequiredArgument(time)
 
-        if ctx.guild.me.top_role.position > target.top_role.position \
-                and not target.guild_permissions.administrator:
-            link = await ctx.channel.create_invite(max_uses=1, unique=True)
-
-            await send_temp_ban_embeds(target, time.__str__(), link, reason)
-            await temp_ban_user(target, time.get_end_time(), reason)
-
-            # TODO remove next line
-            await ctx.send(f"Banned {target.mention}", delete_after=10)
-
-        else:
-            raise MissingPermissions("Нельзя банить участника с более высокой ролью")
-
-        await wait_and_unban(bot=self.bot, target=target)
-        # TODO remove next line
-        await ctx.send(f"Unbanned {target.mention}", delete_after=10)
+        await temp_ban_and_unban(target, reason, self.bot, ctx.guild, ctx.channel, time, convert_time=False)
 
     @guild_only()
     @bot_has_permissions(manage_roles=True)
@@ -76,7 +61,7 @@ class Mod(Cog):
             await ctx.send(f"Muted {target.mention}", delete_after=10)
 
         else:
-            raise MissingPermissions("Нельзя мутить участника с более высокой ролью")
+            raise MissingPermissions("Нельзя мьутить участника с более высокой ролью")
 
         await wait_and_unmute(bot=self.bot, target=target)
 
@@ -194,19 +179,11 @@ class Mod(Cog):
         if not target:
             raise MissingRequiredArgument(target)
 
-        update_warn_entry(target.id, target.guild.id, reason)
-        await send_warn_embeds(target, reason)
-
         # TODO remove next line
         await ctx.send(f"Warned {target.mention}", delete_after=10)
 
-        if (num_warns := get_warn_entry(target.id, target.guild.id)[2]) % NUM_WARNS_TO_TEMP_BAN == 0:
-
-            await self.temp_ban_user(ctx, target,
-                                     time=await TimeConverter().convert(ctx, arg=TIME_TO_TEMP_BAN),
-                                     reason=f"Вы получили очередные {NUM_WARNS_TO_TEMP_BAN} "
-                                            f"предупреждений и были забанены."
-                                            f"Общее количество предупреждений: {num_warns}")
+        await send_warn_embeds(target, reason)
+        await warn_user_util(target, reason, self.bot, ctx.guild, ctx.channel)
 
     @guild_only()
     @bot_has_permissions(manage_roles=True, ban_members=True)
@@ -216,7 +193,7 @@ class Mod(Cog):
         if not target:
             raise MissingRequiredArgument(target)
 
-        unwarn_entry(target.id, ctx.guild.id)
+        await unwarn_user_util(target, ctx.guild)
 
         # TODO remove next line
         await ctx.send(f"UnWarned {target.mention}", delete_after=10)
