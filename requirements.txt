@@ -1,9 +1,9 @@
-aiohttp==3.7.4.post0
+aiohttp==3.7.4
 async-timeout==3.0.1
 attrs==21.2.0
 better-profanity==0.7.0
 cffi==1.14.5
-chardet==4.0.0
+chardet==3.0.4
 cycler==0.10.0
 Cython==0.29.23
 discord.py==1.7.2
