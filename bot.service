@@ -1,0 +1,14 @@
+[Unit]
+Description=Discord server multifunctional bot
+After=network.target syslog.target
+
+[Service]
+Type=simple
+User=vds
+WorkingDirectory=/home/vps/DiscordBotNW
+ExecStart=/usr/bin/make run
+RestartSec=5
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
